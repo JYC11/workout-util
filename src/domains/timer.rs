@@ -8,7 +8,7 @@ pub struct RestTimer {
 }
 
 pub struct EMOMTimer {
-    seconds: u32,
-    rounds: u32,
+    pub seconds: u32,
+    pub rounds: u32,
     pub rest_period: u32,
 }

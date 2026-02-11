@@ -1,3 +1,5 @@
+use crate::context::AppContext;
+
 // data models
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PushOrPull {
@@ -34,10 +36,20 @@ pub enum CompoundOrIsolation {
     Isolation,
 }
 
-// mapped to db row
+// mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ExerciseLibraryEntryEntity {
     pub id: u32,
+    pub name: String,
+    pub push_or_pull: Option<PushOrPull>,
+    pub dynamic_or_static: DynamicOrStatic,
+    pub straight_or_bent: Option<StraightOrBentArm>,
+    pub squat_or_hinge: Option<SquatOrHinge>,
+    pub upper_or_lower: UpperOrLower,
+    pub compound_or_isolation: CompoundOrIsolation,
+}
+
+pub struct ExerciseLibraryEntryReq {
     pub name: String,
     pub push_or_pull: Option<PushOrPull>,
     pub dynamic_or_static: DynamicOrStatic,
@@ -89,6 +101,21 @@ pub enum ValidExercise {
 }
 
 impl ExerciseLibraryEntryEntity {
+    pub fn from_req(req: ExerciseLibraryEntryReq) -> Result<ExerciseLibraryEntryEntity, String> {
+        let entity = ExerciseLibraryEntryEntity {
+            id: 0, // let db generate id
+            name: req.name,
+            push_or_pull: req.push_or_pull,
+            dynamic_or_static: req.dynamic_or_static,
+            straight_or_bent: req.straight_or_bent,
+            squat_or_hinge: req.squat_or_hinge,
+            upper_or_lower: req.upper_or_lower,
+            compound_or_isolation: req.compound_or_isolation,
+        };
+        entity.to_valid_struct()?; // validate
+        Ok(entity)
+    }
+
     pub fn to_valid_struct(&self) -> Result<ValidExercise, String> {
         match self.upper_or_lower {
             UpperOrLower::Upper => match self.compound_or_isolation {
@@ -153,4 +180,29 @@ impl ExerciseLibraryEntryEntity {
             },
         }
     }
+}
+
+pub fn create(app_context: &AppContext, req: ExerciseLibraryEntryReq) -> Result<(), String> {
+    // TODO insert statement
+    Ok(())
+}
+
+pub fn update(app_context: &AppContext, valid_exercise: ValidExercise) -> Result<(), String> {
+    // TODO update statement
+    Ok(())
+}
+
+pub fn delete(app_context: &AppContext, exercise_id: u32) -> Result<(), String> {
+    // TODO delete statement
+    Ok(())
+}
+
+pub fn get_one(app_context: &AppContext, exercise_id: u32) -> Result<(), String> {
+    // TODO select statement and map to ValidExercise
+    Ok(())
+}
+
+pub fn paginate(app_context: &AppContext) -> Result<(), String> {
+    // TODO add filtering and paging
+    Ok(())
 }

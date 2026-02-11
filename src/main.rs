@@ -1,6 +1,5 @@
-mod exercise;
-mod timer;
-mod workout;
+mod context;
+mod domains;
 
 fn main() {
     println!("Hello, world!");
