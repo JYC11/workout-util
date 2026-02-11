@@ -1,5 +1,5 @@
-mod timer;
 mod exercise;
+mod timer;
 mod workout;
 
 fn main() {
@@ -8,4 +8,3 @@ fn main() {
 
 // main app
 pub struct WorkoutUtil {}
-

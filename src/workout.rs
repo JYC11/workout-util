@@ -12,7 +12,7 @@ pub enum Grip {
     Supinated,
     Neutral,
     GymnasticsRing,
-    Floor
+    Floor,
 }
 
 pub enum GripWidth {
@@ -44,9 +44,9 @@ pub enum Band {
 pub struct WorkoutExerciseEntity {
     pub id: u32,
     pub created_at: String, // should be DateTime
-    pub workout_id: u32, // fk to Workout
-    pub exercise_id: u32, // fk to ExerciseLibraryEntry
-    pub code: String, // A1, A2, B1, B2 ...
+    pub workout_id: u32,    // fk to Workout
+    pub exercise_id: u32,   // fk to ExerciseLibraryEntry
+    pub code: String,       // A1, A2, B1, B2 ...
     pub sets: u8,
     pub reps_or_seconds: u8,
     pub weight: u8,
@@ -56,7 +56,7 @@ pub struct WorkoutExerciseEntity {
     pub grip: Option<Grip>,
     pub grip_width: Option<GripWidth>,
     pub equipments: String, // Vec<Equipment>,
-    pub bands: String, // Vec<Band>,
+    pub bands: String,      // Vec<Band>,
 }
 
 pub struct WorkoutEntity {
@@ -67,7 +67,7 @@ pub struct WorkoutLogEntity {
     pub id: u32,
     pub created_at: String,
     pub date: String,
-    pub workout_id: u32, // fk to Workout
+    pub workout_id: u32,          // fk to Workout
     pub workout_exercise_id: u32, // fk to WorkoutExercise
     pub set_number: u32,
     pub rep_number_or_seconds: u32,
