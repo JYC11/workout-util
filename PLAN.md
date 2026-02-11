@@ -1,0 +1,39 @@
+# planning
+
+### what I need
+- metronome to count seconds while working out for statics
+- rest timer
+- EMOM timer
+- exercise library (CRUD)
+  - exercise name
+  - lever variation (tuck, adv tuck, straddle, one leg, half lay, full)
+  - grip
+- equipment library (CRUD)
+  - band
+  - parallettes (high, low)
+  - bench
+  - dumbbells
+  - barbell
+  - smith
+  - gymnastic rings
+  - pull up bar
+  - dip bar
+- current workout (CRUD)
+- workout logger (CRUD)
+  - sets, reps, weight, equipment, duration, date, notes
+
+### stack
+- egui
+- sqlx
+- sqlite
+- something for audio
+
+## flow
+- home/entry page (tab 0)
+- log exercises in exercise library (tab 1)
+- log equipments in equipment library (tab 2)
+- create workout by selecting exercises and equipment (tab 3)
+- during workout, log progress and use template from the workout (tab 4)
+  - use metronome to count seconds
+  - use rest timer between sets
+
