@@ -1,3 +1,0 @@
-pub fn migrate() {
-    // TODO
-}
