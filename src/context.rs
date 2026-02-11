@@ -2,4 +2,6 @@
 pub struct AppConfig {}
 
 // db connection will live here
-pub struct AppContext {}
+pub struct AppContext {
+    // TODO db connection
+}

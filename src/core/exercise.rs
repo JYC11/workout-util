@@ -18,6 +18,7 @@ pub enum StraightOrBentArm {
     Straight,
     Bent,
 }
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SquatOrHinge {
     Squat,
@@ -47,6 +48,7 @@ pub struct ExerciseLibraryEntryEntity {
     pub squat_or_hinge: Option<SquatOrHinge>,
     pub upper_or_lower: UpperOrLower,
     pub compound_or_isolation: CompoundOrIsolation,
+    pub description: Option<String>,
 }
 
 pub struct ExerciseLibraryEntryReq {
@@ -57,6 +59,7 @@ pub struct ExerciseLibraryEntryReq {
     pub squat_or_hinge: Option<SquatOrHinge>,
     pub upper_or_lower: UpperOrLower,
     pub compound_or_isolation: CompoundOrIsolation,
+    pub description: Option<String>,
 }
 
 // row is mapped to these valid structs
@@ -111,6 +114,7 @@ impl ExerciseLibraryEntryEntity {
             squat_or_hinge: req.squat_or_hinge,
             upper_or_lower: req.upper_or_lower,
             compound_or_isolation: req.compound_or_isolation,
+            description: req.description,
         };
         entity.to_valid_struct()?; // validate
         Ok(entity)

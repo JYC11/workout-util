@@ -30,8 +30,9 @@
 
 ## plan
 - setup data models and logic
-- figure out how to use eframe
 - figure out how to use sqlx
+- figure out how to use eframe
+
 
 ## flow
 - home/entry page (tab 0)

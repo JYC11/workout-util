@@ -1,5 +1,6 @@
 mod context;
-mod domains;
+mod core;
+mod db;
 
 fn main() {
     println!("Hello, world!");
