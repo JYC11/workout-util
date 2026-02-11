@@ -8,7 +8,7 @@
   - exercise name
   - lever variation (tuck, adv tuck, straddle, one leg, half lay, full)
   - grip
-- equipment library (CRUD)
+- equipment library
   - band
   - parallettes (high, low)
   - bench
@@ -23,10 +23,15 @@
   - sets, reps, weight, equipment, duration, date, notes
 
 ### stack
-- egui
+- eframe
 - sqlx
 - sqlite
 - something for audio
+
+## plan
+- setup data models and logic
+- figure out how to use eframe
+- figure out how to use sqlx
 
 ## flow
 - home/entry page (tab 0)
