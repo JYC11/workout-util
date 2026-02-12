@@ -166,8 +166,10 @@ pub async fn paginate_logs(tx: &mut Transaction<'_, Sqlite>) -> Result<(), Strin
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::enums::{Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower};
     use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::workout::enums::{
+        Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower,
+    };
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {

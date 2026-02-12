@@ -1,4 +1,4 @@
-use crate::core::enums::{Band, Equipment};
+use crate::workout::enums::{Band, Equipment};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::types::Json;
@@ -426,8 +426,8 @@ pub fn paginate_workout_exercises(tx: &Transaction<Sqlite>) -> Result<(), String
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::enums::{Band, Equipment};
     use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::workout::enums::{Band, Equipment};
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {
@@ -584,9 +584,9 @@ mod tests {
             ) VALUES (?, ?, ?, ?)"#,
         )
         .bind("Dummy Pushup")
-        .bind(crate::core::enums::DynamicOrStatic::Dynamic)
-        .bind(crate::core::enums::UpperOrLower::Upper)
-        .bind(crate::core::enums::CompoundOrIsolation::Compound)
+        .bind(crate::workout::enums::DynamicOrStatic::Dynamic)
+        .bind(crate::workout::enums::UpperOrLower::Upper)
+        .bind(crate::workout::enums::CompoundOrIsolation::Compound)
         .execute(&mut *tx)
         .await
         .unwrap();

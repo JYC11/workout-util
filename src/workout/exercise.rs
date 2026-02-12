@@ -1,4 +1,4 @@
-use crate::core::enums::{
+use crate::workout::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
@@ -432,8 +432,8 @@ pub fn paginate_exercises(tx: &mut Transaction<'_, Sqlite>) -> Result<(), String
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::enums::*;
     use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::workout::enums::*;
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {

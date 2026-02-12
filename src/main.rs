@@ -1,6 +1,7 @@
 mod context;
-mod core;
 mod db;
+mod timer;
+mod workout;
 
 fn main() {
     println!("Hello, world!");
