@@ -106,16 +106,16 @@ pub async fn create_log(
             set_number, rep_number_or_seconds, weight, description
         ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
     )
-        .bind(req.workout_id)
-        .bind(req.workout_exercise_id)
-        .bind(req.workout_log_group_id)
-        .bind(req.set_number)
-        .bind(req.rep_number_or_seconds)
-        .bind(req.weight)
-        .bind(req.description)
-        .execute(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to create workout log: {}", e))?;
+    .bind(req.workout_id)
+    .bind(req.workout_exercise_id)
+    .bind(req.workout_log_group_id)
+    .bind(req.set_number)
+    .bind(req.rep_number_or_seconds)
+    .bind(req.weight)
+    .bind(req.description)
+    .execute(&mut **tx)
+    .await
+    .map_err(|e| format!("Failed to create workout log: {}", e))?;
 
     Ok(result.last_insert_rowid() as u32)
 }
@@ -167,7 +167,7 @@ pub async fn paginate_logs(tx: &mut Transaction<'_, Sqlite>) -> Result<(), Strin
 mod tests {
     use super::*;
     use crate::core::enums::{Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower};
-    use crate::db::{init_db, IN_MEMORY_DB_URL};
+    use crate::db::{IN_MEMORY_DB_URL, init_db};
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {
@@ -181,13 +181,13 @@ mod tests {
                 name, dynamic_or_static, upper_or_lower, compound_or_isolation
             ) VALUES (?, ?, ?, ?)"#,
         )
-            .bind("Dummy Ex")
-            .bind(DynamicOrStatic::Dynamic)
-            .bind(UpperOrLower::Upper)
-            .bind(CompoundOrIsolation::Compound)
-            .execute(&mut **tx)
-            .await
-            .unwrap();
+        .bind("Dummy Ex")
+        .bind(DynamicOrStatic::Dynamic)
+        .bind(UpperOrLower::Upper)
+        .bind(CompoundOrIsolation::Compound)
+        .execute(&mut **tx)
+        .await
+        .unwrap();
         1 // first auto-increment ID
     }
 
@@ -227,21 +227,21 @@ mod tests {
                 rest_period_seconds, tempo, equipments, bands, description
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
-            .bind(chrono::Utc::now())
-            .bind(workout_id)
-            .bind(exercise_id)
-            .bind("A1")
-            .bind(3u8)
-            .bind(10u8)
-            .bind(50u8)
-            .bind(60u8)
-            .bind("2010")
-            .bind(sqlx::types::Json(vec![Equipment::Barbell]))
-            .bind(sqlx::types::Json(vec![Band::Yellow]))
-            .bind(Option::<String>::None)
-            .execute(&mut **tx)
-            .await
-            .unwrap();
+        .bind(chrono::Utc::now())
+        .bind(workout_id)
+        .bind(exercise_id)
+        .bind("A1")
+        .bind(3u8)
+        .bind(10u8)
+        .bind(50u8)
+        .bind(60u8)
+        .bind("2010")
+        .bind(sqlx::types::Json(vec![Equipment::Barbell]))
+        .bind(sqlx::types::Json(vec![Band::Yellow]))
+        .bind(Option::<String>::None)
+        .execute(&mut **tx)
+        .await
+        .unwrap();
 
         let workout_exercise_id = 1u32; // first one
 

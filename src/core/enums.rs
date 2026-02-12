@@ -18,6 +18,7 @@ pub enum Grip {
     Neutral,
     GymnasticsRing,
     Floor,
+    Mixed,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type)]

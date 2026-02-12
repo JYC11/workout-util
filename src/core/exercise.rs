@@ -50,6 +50,28 @@ pub struct UpperBodyCompoundExercise {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct StraightArmCompoundExercise {
+    pub id: u32,
+    pub name: String,
+    pub push_or_pull: PushOrPull,
+    pub dynamic_or_static: DynamicOrStatic,
+    pub lever_variation: LeverVariation, // NON-OPTIONAL
+    pub grip: Grip,
+    pub grip_width: GripWidth,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BentArmCompoundExercise {
+    pub id: u32,
+    pub name: String,
+    pub push_or_pull: PushOrPull,
+    pub dynamic_or_static: DynamicOrStatic,
+    pub lever_variation: Option<LeverVariation>, // Optional for bent-arm
+    pub grip: Grip,
+    pub grip_width: GripWidth,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UpperBodyIsolationExercise {
     pub id: u32,
     pub name: String,
@@ -74,7 +96,8 @@ pub struct LowerBodyIsolationExercise {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ValidExercise {
-    UpperBodyCompound(UpperBodyCompoundExercise),
+    StraightArmCompound(StraightArmCompoundExercise),
+    BentArmCompound(BentArmCompoundExercise),
     UpperBodyIsolation(UpperBodyIsolationExercise),
     LowerBodyCompound(LowerBodyCompoundExercise),
     LowerBodyIsolation(LowerBodyIsolationExercise),
@@ -100,7 +123,33 @@ impl ExerciseLibraryEntity {
         Ok(entity)
     }
 
+    fn validate_invariants(&self) -> Result<(), String> {
+        // Reject contradictory fields
+        if self.name.is_empty() {
+            return Err("Exercise name cannot be empty".into());
+        }
+        if self.upper_or_lower == UpperOrLower::Lower && self.push_or_pull.is_some() {
+            return Err("Lower body exercises cannot have push/pull designation".into());
+        }
+        if self.upper_or_lower == UpperOrLower::Upper && self.squat_or_hinge.is_some() {
+            return Err("Upper body exercises cannot have squat/hinge designation".into());
+        }
+        if self.compound_or_isolation == CompoundOrIsolation::Isolation {
+            if self.push_or_pull.is_some()
+                || self.lever_variation.is_some()
+                || self.grip.is_some()
+                || self.grip_width.is_some()
+            {
+                return Err("Isolation exercises cannot have compound-specific attributes".into());
+            }
+        }
+        Ok(())
+    }
+
     pub fn to_valid_struct(&self) -> Result<ValidExercise, String> {
+        // FIRST: Validate global invariants
+        self.validate_invariants()?;
+
         match self.upper_or_lower {
             UpperOrLower::Upper => match self.compound_or_isolation {
                 CompoundOrIsolation::Compound => {
@@ -111,37 +160,45 @@ impl ExerciseLibraryEntity {
                         "Upper body compound exercises require a straight/bent arm designation"
                             .to_string(),
                     )?;
-
-                    match straight_or_bent {
-                        StraightOrBentArm::Straight => {
-                            self.lever_variation.ok_or(
-                                "Upper body compound exercises require a lever variation designation"
-                            )?;
-                        }
-                        _ => {}
-                    }
-
                     let grip = self.grip.ok_or(
                         "Upper body compound exercises require a grip designation".to_string(),
                     )?;
-
                     let grip_width = self.grip_width.ok_or(
                         "Upper body compound exercises require a grip width designation"
                             .to_string(),
                     )?;
 
-                    Ok(ValidExercise::UpperBodyCompound(
-                        UpperBodyCompoundExercise {
-                            id: self.id,
-                            name: self.name.clone(),
-                            push_or_pull,
-                            dynamic_or_static: self.dynamic_or_static,
-                            straight_or_bent,
-                            lever_variation: self.lever_variation,
-                            grip,
-                            grip_width,
-                        },
-                    ))
+                    match straight_or_bent {
+                        StraightOrBentArm::Straight => {
+                            let lever_variation = self.lever_variation.ok_or(
+                                "Straight-arm compound exercises require a lever variation"
+                                    .to_string(),
+                            )?;
+
+                            Ok(ValidExercise::StraightArmCompound(
+                                StraightArmCompoundExercise {
+                                    id: self.id,
+                                    name: self.name.clone(),
+                                    push_or_pull,
+                                    dynamic_or_static: self.dynamic_or_static,
+                                    lever_variation,
+                                    grip,
+                                    grip_width,
+                                },
+                            ))
+                        }
+                        StraightOrBentArm::Bent => {
+                            Ok(ValidExercise::BentArmCompound(BentArmCompoundExercise {
+                                id: self.id,
+                                name: self.name.clone(),
+                                push_or_pull,
+                                dynamic_or_static: self.dynamic_or_static,
+                                lever_variation: self.lever_variation, // Optional
+                                grip,
+                                grip_width,
+                            }))
+                        }
+                    }
                 }
                 CompoundOrIsolation::Isolation => {
                     let straight_or_bent = self.straight_or_bent.ok_or(
@@ -201,20 +258,20 @@ pub async fn create_exercise(
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
-        .bind(entity.name)
-        .bind(entity.push_or_pull)
-        .bind(entity.dynamic_or_static)
-        .bind(entity.straight_or_bent)
-        .bind(entity.squat_or_hinge)
-        .bind(entity.upper_or_lower)
-        .bind(entity.compound_or_isolation)
-        .bind(entity.lever_variation)
-        .bind(entity.grip)
-        .bind(entity.grip_width)
-        .bind(entity.description)
-        .execute(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to create exercise: {}", e))?;
+    .bind(entity.name)
+    .bind(entity.push_or_pull)
+    .bind(entity.dynamic_or_static)
+    .bind(entity.straight_or_bent)
+    .bind(entity.squat_or_hinge)
+    .bind(entity.upper_or_lower)
+    .bind(entity.compound_or_isolation)
+    .bind(entity.lever_variation)
+    .bind(entity.grip)
+    .bind(entity.grip_width)
+    .bind(entity.description)
+    .execute(&mut **tx)
+    .await
+    .map_err(|e| format!("Failed to create exercise: {}", e))?;
 
     let id = result.last_insert_rowid() as u32;
 
@@ -238,16 +295,29 @@ pub async fn update_exercise(
         grip,
         grip_width,
     ) = match valid_exercise {
-        ValidExercise::UpperBodyCompound(e) => (
+        ValidExercise::StraightArmCompound(e) => (
             e.id,
             e.name,
             Some(e.push_or_pull),
             e.dynamic_or_static,
-            Some(e.straight_or_bent),
+            Some(StraightOrBentArm::Straight), // Explicitly set
             None::<SquatOrHinge>,
             UpperOrLower::Upper,
             CompoundOrIsolation::Compound,
-            e.lever_variation,
+            Some(e.lever_variation), // Always Some
+            Some(e.grip),
+            Some(e.grip_width),
+        ),
+        ValidExercise::BentArmCompound(e) => (
+            e.id,
+            e.name,
+            Some(e.push_or_pull),
+            e.dynamic_or_static,
+            Some(StraightOrBentArm::Bent), // Explicitly set
+            None::<SquatOrHinge>,
+            UpperOrLower::Upper,
+            CompoundOrIsolation::Compound,
+            e.lever_variation, // Could be None
             Some(e.grip),
             Some(e.grip_width),
         ),
@@ -301,20 +371,20 @@ pub async fn update_exercise(
         WHERE id = ?
         "#,
     )
-        .bind(name)
-        .bind(push_or_pull)
-        .bind(dynamic_or_static)
-        .bind(straight_or_bent)
-        .bind(squat_or_hinge)
-        .bind(upper_or_lower)
-        .bind(compound_or_isolation)
-        .bind(lever_variation)
-        .bind(grip)
-        .bind(grip_width)
-        .bind(id)
-        .execute(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to update exercise: {}", e))?;
+    .bind(name)
+    .bind(push_or_pull)
+    .bind(dynamic_or_static)
+    .bind(straight_or_bent)
+    .bind(squat_or_hinge)
+    .bind(upper_or_lower)
+    .bind(compound_or_isolation)
+    .bind(lever_variation)
+    .bind(grip)
+    .bind(grip_width)
+    .bind(id)
+    .execute(&mut **tx)
+    .await
+    .map_err(|e| format!("Failed to update exercise: {}", e))?;
 
     if result.rows_affected() == 0 {
         return Err("Exercise not found".to_string());
@@ -363,7 +433,7 @@ pub fn paginate_exercises(tx: &mut Transaction<'_, Sqlite>) -> Result<(), String
 mod tests {
     use super::*;
     use crate::core::enums::*;
-    use crate::db::{init_db, IN_MEMORY_DB_URL};
+    use crate::db::{IN_MEMORY_DB_URL, init_db};
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {
@@ -405,7 +475,7 @@ mod tests {
             .expect("Failed to get exercise");
 
         match result {
-            ValidExercise::UpperBodyCompound(e) => {
+            ValidExercise::BentArmCompound(e) => {
                 assert_eq!(e.id, 1);
                 assert_eq!(e.name, "Bench Press");
                 assert_eq!(e.push_or_pull, PushOrPull::Push);
@@ -429,7 +499,7 @@ mod tests {
         let mut exercise = get_one_exercise(&mut tx, 1).await.unwrap();
 
         // Modify it
-        if let ValidExercise::UpperBodyCompound(ref mut e) = exercise {
+        if let ValidExercise::BentArmCompound(ref mut e) = exercise {
             e.name = "New Name".to_string();
             // Change a property to ensure update logic works
             e.grip_width = GripWidth::Wide;
@@ -442,7 +512,7 @@ mod tests {
 
         // Verify changes
         let updated = get_one_exercise(&mut tx, 1).await.unwrap();
-        if let ValidExercise::UpperBodyCompound(e) = updated {
+        if let ValidExercise::BentArmCompound(e) = updated {
             assert_eq!(e.name, "New Name");
             assert_eq!(e.grip_width, GripWidth::Wide);
         } else {
@@ -552,7 +622,7 @@ mod tests {
         invalid.lever_variation = None;
         assert_eq!(
             invalid.to_valid_struct().err().unwrap(),
-            "Upper body compound exercises require a lever variation designation"
+            "Straight-arm compound exercises require a lever variation"
         );
     }
 
