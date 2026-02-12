@@ -7,10 +7,10 @@ use crate::workout::enums::{
 };
 use crate::workout::exercise_dto::{
     BentArmCompoundExercise, ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes,
-    LowerBodyCompoundExercise, LowerBodyIsolationExercise,
-    StraightArmCompoundExercise, UpperBodyIsolationExercise, ValidExercise,
+    LowerBodyCompoundExercise, LowerBodyIsolationExercise, StraightArmCompoundExercise,
+    UpperBodyIsolationExercise, ValidExercise,
 };
-use sqlx::{FromRow, QueryBuilder, Sqlite, Transaction};
+use sqlx::{Executor, FromRow, QueryBuilder, Sqlite, Transaction};
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]
@@ -335,13 +335,13 @@ pub async fn delete_exercise(
     Ok(())
 }
 
-pub async fn get_one_exercise(
-    tx: &mut Transaction<'_, Sqlite>,
+pub async fn get_one_exercise<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
     exercise_id: u32,
 ) -> Result<ValidExercise, String> {
     let row: ExerciseLibraryEntity = sqlx::query_as("SELECT * FROM exercise_library WHERE id = ?")
         .bind(exercise_id)
-        .fetch_optional(&mut **tx)
+        .fetch_optional(executor)
         .await
         .map_err(|e| format!("Database error: {}", e))?
         .ok_or_else(|| "Exercise not found".to_string())?;
@@ -349,27 +349,24 @@ pub async fn get_one_exercise(
     row.to_valid_struct()
 }
 
-pub async fn paginate_exercises(
-    tx: &mut Transaction<'_, Sqlite>,
+pub async fn paginate_exercises<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
     filter_req: Option<ExerciseLibraryFilterReq>,
     limit: u32,
     cursor: Option<u32>,
     direction: PaginationDirection,
 ) -> Result<PaginationRes<ExerciseLibraryRes>, String> {
     let mut qb = QueryBuilder::new("SELECT * FROM exercise_library WHERE 1=1");
-
     pagination_filters(filter_req, &mut qb);
-
     keyset_paginate(limit, cursor, direction, &mut qb);
 
     let mut rows: Vec<ExerciseLibraryRes> = qb
         .build_query_as()
-        .fetch_all(&mut **tx)
+        .fetch_all(executor)
         .await
         .map_err(|e| format!("Failed to paginate exercises: {}", e))?;
 
     let cursors = get_cursors(limit, cursor, direction, &mut rows);
-
     Ok(PaginationRes {
         items: rows,
         next_cursor: cursors.next_cursor,
@@ -526,7 +523,7 @@ mod tests {
             .expect("Failed to create exercise");
 
         // 2. Test Get One (ID should be 1 for first entry)
-        let result = get_one_exercise(&mut tx, 1)
+        let result = get_one_exercise(&mut *tx, 1)
             .await
             .expect("Failed to get exercise");
 
@@ -555,7 +552,7 @@ mod tests {
             .expect("Failed to create exercise");
 
         // 2. Test Paginate (ID should be 1 for first entry)
-        let result = paginate_exercises(&mut tx, None, 1, None, PaginationDirection::Forward)
+        let result = paginate_exercises(&mut *tx, None, 1, None, PaginationDirection::Forward)
             .await
             .expect("Failed to get exercise");
 
@@ -568,7 +565,7 @@ mod tests {
         create_exercise(&mut tx, req2).await.unwrap(); // ID 2
 
         // Test Paginate Page 1 (Limit 1)
-        let result = paginate_exercises(&mut tx, None, 1, None, PaginationDirection::Forward)
+        let result = paginate_exercises(&mut *tx, None, 1, None, PaginationDirection::Forward)
             .await
             .unwrap();
         assert_eq!(result.items.len(), 1);
@@ -577,7 +574,7 @@ mod tests {
         assert_eq!(result.prev_cursor, None);
 
         // Test Paginate Page 2 (Limit 1, Cursor 1)
-        let result = paginate_exercises(&mut tx, None, 1, Some(1), PaginationDirection::Forward)
+        let result = paginate_exercises(&mut *tx, None, 1, Some(1), PaginationDirection::Forward)
             .await
             .unwrap();
         assert_eq!(result.items.len(), 1);
@@ -586,7 +583,7 @@ mod tests {
         assert_eq!(result.prev_cursor, Some(2)); // Can go back
 
         // Test Paginate Backward from Page 2 (Cursor 2)
-        let result = paginate_exercises(&mut tx, None, 1, Some(2), PaginationDirection::Backward)
+        let result = paginate_exercises(&mut *tx, None, 1, Some(2), PaginationDirection::Backward)
             .await
             .unwrap();
         assert_eq!(result.items.len(), 1);
@@ -595,7 +592,7 @@ mod tests {
         assert_eq!(result.prev_cursor, None); // No more previous
 
         // 3. Test cursor at 2 should return no results (Forward)
-        let result = paginate_exercises(&mut tx, None, 1, Some(2), PaginationDirection::Forward)
+        let result = paginate_exercises(&mut *tx, None, 1, Some(2), PaginationDirection::Forward)
             .await
             .expect("Failed to get exercise");
 
@@ -603,7 +600,7 @@ mod tests {
 
         // 4. Test filter by type Pull should return no results
         let result = paginate_exercises(
-            &mut tx,
+            &mut *tx,
             Some(ExerciseLibraryFilterReq {
                 name: None,
                 push_or_pull: Some(vec![PushOrPull::Pull]),
@@ -627,7 +624,7 @@ mod tests {
 
         // 4. Test filter by type Push should return 1 result
         let result = paginate_exercises(
-            &mut tx,
+            &mut *tx,
             Some(ExerciseLibraryFilterReq {
                 name: None,
                 push_or_pull: Some(vec![PushOrPull::Push]),
@@ -662,7 +659,7 @@ mod tests {
         create_exercise(&mut tx, req).await.unwrap();
 
         // Get the valid struct
-        let mut exercise = get_one_exercise(&mut tx, 1).await.unwrap();
+        let mut exercise = get_one_exercise(&mut *tx, 1).await.unwrap();
 
         // Modify it
         if let ValidExercise::BentArmCompound(ref mut e) = exercise {
@@ -677,7 +674,7 @@ mod tests {
             .expect("Failed to update");
 
         // Verify changes
-        let updated = get_one_exercise(&mut tx, 1).await.unwrap();
+        let updated = get_one_exercise(&mut *tx, 1).await.unwrap();
         if let ValidExercise::BentArmCompound(e) = updated {
             assert_eq!(e.name, "New Name");
             assert_eq!(e.grip_width, GripWidth::Wide);
@@ -698,13 +695,13 @@ mod tests {
         create_exercise(&mut tx, req).await.unwrap();
 
         // Ensure it exists
-        assert!(get_one_exercise(&mut tx, 1).await.is_ok());
+        assert!(get_one_exercise(&mut *tx, 1).await.is_ok());
 
         // 4. Test Delete
         delete_exercise(&mut tx, 1).await.expect("Failed to delete");
 
         // Verify it is gone
-        let result = get_one_exercise(&mut tx, 1).await;
+        let result = get_one_exercise(&mut *tx, 1).await;
         assert!(result.is_err(), "Exercise should have been deleted");
 
         tx.commit().await.unwrap();

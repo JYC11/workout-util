@@ -1,6 +1,6 @@
 use crate::workout::workout_log_dto::{WorkoutLogReq, WorkoutLogRes};
 use chrono::{DateTime, NaiveDate, Utc};
-use sqlx::{FromRow, Sqlite, Transaction};
+use sqlx::{Executor, FromRow, Sqlite, Transaction};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]
 pub struct WorkoutLogEntity {
@@ -60,13 +60,13 @@ pub async fn delete_log_group(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Resu
 }
 
 // TODO need to join logs
-pub async fn get_one_log_group(
-    tx: &mut Transaction<'_, Sqlite>,
+pub async fn get_one_log_group<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
     id: u32,
 ) -> Result<WorkoutLogGroupEntity, String> {
     sqlx::query_as::<_, WorkoutLogGroupEntity>("SELECT * FROM workout_log_groups WHERE id = ?")
         .bind(id)
-        .fetch_optional(&mut **tx)
+        .fetch_optional(executor)
         .await
         .map_err(|e| format!("Database error: {}", e))?
         .ok_or_else(|| "Log group not found".to_string())
@@ -113,13 +113,13 @@ pub async fn delete_log(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result<(),
 }
 
 // TODO need to join exercises and workout
-pub async fn get_one_log(
-    tx: &mut Transaction<'_, Sqlite>,
+pub async fn get_one_log<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
     id: u32,
 ) -> Result<WorkoutLogRes, String> {
     let entity: WorkoutLogEntity = sqlx::query_as("SELECT * FROM workout_logs WHERE id = ?")
         .bind(id)
-        .fetch_optional(&mut **tx)
+        .fetch_optional(executor)
         .await
         .map_err(|e| format!("Database error: {}", e))?
         .ok_or_else(|| "Workout log not found".to_string())?;
@@ -242,7 +242,7 @@ mod tests {
             .expect("Failed to create log group");
 
         // Get
-        let group = get_one_log_group(&mut tx, group_id)
+        let group = get_one_log_group(&mut *tx, group_id)
             .await
             .expect("Failed to get log group");
         assert_eq!(group.date, today);
@@ -253,7 +253,7 @@ mod tests {
             .await
             .expect("Failed to delete log group");
 
-        assert!(get_one_log_group(&mut tx, group_id).await.is_err());
+        assert!(get_one_log_group(&mut *tx, group_id).await.is_err());
 
         tx.commit().await.unwrap();
     }
@@ -284,7 +284,7 @@ mod tests {
             .expect("Failed to create workout log");
 
         // Get
-        let log = get_one_log(&mut tx, log_id)
+        let log = get_one_log(&mut *tx, log_id)
             .await
             .expect("Failed to get workout log");
         assert_eq!(log.workout_id, workout_id);
@@ -299,7 +299,7 @@ mod tests {
             .await
             .expect("Failed to delete workout log");
 
-        assert!(get_one_log(&mut tx, log_id).await.is_err());
+        assert!(get_one_log(&mut *tx, log_id).await.is_err());
 
         tx.commit().await.unwrap();
     }

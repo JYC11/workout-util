@@ -5,7 +5,7 @@ use crate::workout::workout_dto::{
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::types::Json;
-use sqlx::{FromRow, Sqlite, Transaction};
+use sqlx::{Executor, FromRow, Sqlite, Transaction};
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow, Deserialize)]
@@ -117,13 +117,13 @@ pub async fn delete_workout_plan(tx: &mut Transaction<'_, Sqlite>, id: u32) -> R
 }
 
 // TODO needs to join workouts
-pub async fn get_one_workout_plan(
-    tx: &mut Transaction<'_, Sqlite>,
+pub async fn get_one_workout_plan<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
     id: u32,
 ) -> Result<WorkoutPlanRes, String> {
     let row: WorkoutPlanEntity = sqlx::query_as("SELECT * FROM workout_plans WHERE id = ?")
         .bind(id)
-        .fetch_optional(&mut **tx)
+        .fetch_optional(executor)
         .await
         .map_err(|e| format!("Database error: {}", e))?
         .ok_or_else(|| "Workout plan not found".to_string())?;
@@ -136,7 +136,9 @@ pub async fn get_one_workout_plan(
     })
 }
 
-pub fn paginate_workout_plans(tx: &Transaction<Sqlite>) -> Result<(), String> {
+pub fn paginate_workout_plans<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
+) -> Result<(), String> {
     // TODO
     Ok(())
 }
@@ -209,13 +211,13 @@ pub async fn delete_workout(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result
 }
 
 // TODO needs to join workout exercises and exercise library
-pub async fn get_one_workout(
-    tx: &mut Transaction<'_, Sqlite>,
+pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
     id: u32,
 ) -> Result<WorkoutRes, String> {
     let row: WorkoutEntity = sqlx::query_as("SELECT * FROM workouts WHERE id = ?")
         .bind(id)
-        .fetch_optional(&mut **tx)
+        .fetch_optional(executor)
         .await
         .map_err(|e| format!("Database error: {}", e))?
         .ok_or_else(|| "Workout not found".to_string())?;
@@ -332,13 +334,13 @@ pub async fn delete_workout_exercise(
 }
 
 // TODO join to exercise library to get exercise name
-pub async fn get_one_workout_exercise(
-    tx: &mut Transaction<'_, Sqlite>,
+pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
     id: u32,
 ) -> Result<WorkoutExerciseRes, String> {
     let row: WorkoutExerciseEntity = sqlx::query_as("SELECT * FROM workout_exercises WHERE id = ?")
         .bind(id)
-        .fetch_optional(&mut **tx)
+        .fetch_optional(executor)
         .await
         .map_err(|e| format!("Database error: {}", e))?
         .ok_or_else(|| "Workout exercise not found".to_string())?;
@@ -425,7 +427,7 @@ mod tests {
             .expect("Failed to create workout plan");
 
         // Get
-        let plan = get_one_workout_plan(&mut tx, plan_id)
+        let plan = get_one_workout_plan(&mut *tx, plan_id)
             .await
             .expect("Failed to get workout plan");
         assert_eq!(plan.name, "Beginner Plan");
@@ -438,7 +440,7 @@ mod tests {
             .await
             .expect("Failed to update workout plan");
 
-        let updated_plan = get_one_workout_plan(&mut tx, plan_id)
+        let updated_plan = get_one_workout_plan(&mut *tx, plan_id)
             .await
             .expect("Failed to get updated plan");
         assert_eq!(updated_plan.name, "Advanced Plan");
@@ -449,7 +451,7 @@ mod tests {
             .await
             .expect("Failed to delete workout plan");
 
-        assert!(get_one_workout_plan(&mut tx, plan_id).await.is_err());
+        assert!(get_one_workout_plan(&mut *tx, plan_id).await.is_err());
 
         tx.commit().await.unwrap();
     }
@@ -472,7 +474,7 @@ mod tests {
             .expect("Failed to create workout");
 
         // Get
-        let workout = get_one_workout(&mut tx, workout_id)
+        let workout = get_one_workout(&mut *tx, workout_id)
             .await
             .expect("Failed to get workout");
         assert_eq!(workout.name, "Upper Body A");
@@ -485,7 +487,7 @@ mod tests {
             .await
             .expect("Failed to update workout");
 
-        let updated_workout = get_one_workout(&mut tx, workout_id)
+        let updated_workout = get_one_workout(&mut *tx, workout_id)
             .await
             .expect("Failed to get updated workout");
         assert_eq!(updated_workout.name, "Lower Body A");
@@ -496,7 +498,7 @@ mod tests {
             .await
             .expect("Failed to delete workout");
 
-        assert!(get_one_workout(&mut tx, workout_id).await.is_err());
+        assert!(get_one_workout(&mut *tx, workout_id).await.is_err());
 
         tx.commit().await.unwrap();
     }
@@ -542,7 +544,7 @@ mod tests {
         .expect("Failed to create workout exercise");
 
         // Get
-        let ex = get_one_workout_exercise(&mut tx, ex_id)
+        let ex = get_one_workout_exercise(&mut *tx, ex_id)
             .await
             .expect("Failed to get workout exercise");
         assert_eq!(ex.code, "A1");
@@ -564,7 +566,7 @@ mod tests {
             .await
             .expect("Failed to update workout exercise");
 
-        let updated_ex = get_one_workout_exercise(&mut tx, ex_id)
+        let updated_ex = get_one_workout_exercise(&mut *tx, ex_id)
             .await
             .expect("Failed to get updated exercise");
         assert_eq!(updated_ex.code, "A2");
@@ -579,7 +581,7 @@ mod tests {
             .await
             .expect("Failed to delete workout exercise");
 
-        assert!(get_one_workout_exercise(&mut tx, ex_id).await.is_err());
+        assert!(get_one_workout_exercise(&mut *tx, ex_id).await.is_err());
 
         tx.commit().await.unwrap();
     }
