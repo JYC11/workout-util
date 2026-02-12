@@ -1,5 +1,6 @@
 use crate::context::AppContext;
 use chrono::{DateTime, NaiveDate, Utc};
+use sqlx::{Sqlite, Transaction};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutLogEntity {
@@ -32,27 +33,27 @@ pub struct WorkoutLogGroupEntity {
 }
 // WorkoutLogGroupEntity -> WorkoutLogEntity 1:many
 
-pub fn create_log_group(app_context: &AppContext) -> Result<(), String> {
+pub fn create_log_group(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn create_log(app_context: &AppContext, req: WorkoutLogReq) -> Result<(), String> {
+pub fn create_log(tx: &Transaction<Sqlite>, req: WorkoutLogReq) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn delete_log_group(app_context: &AppContext, id: u32) -> Result<(), String> {
+pub fn delete_log_group(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn delete_log(app_context: &AppContext, id: u32) -> Result<(), String> {
+pub fn delete_log(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn paginate_logs(app_context: &AppContext) -> Result<(), String> {
+pub fn paginate_logs(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO
     Ok(())
 }

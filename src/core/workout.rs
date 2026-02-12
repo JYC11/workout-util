@@ -2,6 +2,7 @@ use crate::context::AppContext;
 use crate::core::enums::{Band, Equipment, Grip, GripWidth, LeverVariation};
 use chrono::{DateTime, Utc};
 use sqlx::types::Json;
+use sqlx::{Sqlite, Transaction};
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -71,18 +72,18 @@ pub struct WorkoutPlanReq {
 
 // WorkoutPlanEntity -> WorkoutEntity, 1:many
 
-pub fn create_workout_plan(app_context: &AppContext, req: WorkoutPlanReq) -> Result<(), String> {
+pub fn create_workout_plan(tx: &Transaction<Sqlite>, req: WorkoutPlanReq) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn create_workout(app_context: &AppContext, req: WorkoutReq) -> Result<(), String> {
+pub fn create_workout(tx: &Transaction<Sqlite>, req: WorkoutReq) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
 pub fn create_workout_exercise(
-    app_context: &AppContext,
+    tx: &Transaction<Sqlite>,
     req: WorkoutExerciseReq,
 ) -> Result<(), String> {
     // TODO
@@ -90,7 +91,7 @@ pub fn create_workout_exercise(
 }
 
 pub fn update_workout_plan(
-    app_context: &AppContext,
+    tx: &Transaction<Sqlite>,
     id: u32,
     req: WorkoutPlanReq,
 ) -> Result<(), String> {
@@ -98,13 +99,13 @@ pub fn update_workout_plan(
     Ok(())
 }
 
-pub fn update_workout(app_context: &AppContext, id: u32, req: WorkoutReq) -> Result<(), String> {
+pub fn update_workout(tx: &Transaction<Sqlite>, id: u32, req: WorkoutReq) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
 pub fn update_workout_exercise(
-    app_context: &AppContext,
+    tx: &Transaction<Sqlite>,
     id: u32,
     req: WorkoutExerciseReq,
 ) -> Result<(), String> {
@@ -112,50 +113,50 @@ pub fn update_workout_exercise(
     Ok(())
 }
 
-pub fn delete_workout_plan(app_context: &AppContext, id: u32) -> Result<(), String> {
+pub fn delete_workout_plan(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn delete_workout(app_context: &AppContext, id: u32) -> Result<(), String> {
+pub fn delete_workout(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     // prevent deleting workouts that are in use by workout logs
     // prevent deleting workout that are used by workout plans
     Ok(())
 }
 
-pub fn delete_workout_exercise(app_context: &AppContext, id: u32) -> Result<(), String> {
+pub fn delete_workout_exercise(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     // prevent deleting exercises that are in use by workouts and that have logs
     Ok(())
 }
 
-pub fn get_one_workout_plan(app_context: &AppContext, id: u32) -> Result<(), String> {
+pub fn get_one_workout_plan(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn get_one_workout(app_context: &AppContext, id: u32) -> Result<(), String> {
+pub fn get_one_workout(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn get_one_workout_exercise(app_context: &AppContext, id: u32) -> Result<(), String> {
+pub fn get_one_workout_exercise(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn paginate_workout_plan(app_context: &AppContext) -> Result<(), String> {
+pub fn paginate_workout_plan(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn paginate_one_workout(app_context: &AppContext) -> Result<(), String> {
+pub fn paginate_one_workout(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn paginate_one_workout_exercise(app_context: &AppContext) -> Result<(), String> {
+pub fn paginate_one_workout_exercise(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO
     Ok(())
 }

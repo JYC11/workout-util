@@ -1,5 +1,9 @@
 use crate::context::AppContext;
-use crate::core::enums::{CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull, SquatOrHinge, StraightOrBentArm, UpperOrLower};
+use crate::core::enums::{
+    CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
+    SquatOrHinge, StraightOrBentArm, UpperOrLower,
+};
+use sqlx::{Sqlite, Transaction};
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -109,8 +113,7 @@ impl ExerciseLibraryEntryEntity {
                     )?;
 
                     let grip = self.grip.ok_or(
-                        "Upper body compound exercises require a grip designation"
-                            .to_string(),
+                        "Upper body compound exercises require a grip designation".to_string(),
                     )?;
 
                     let grip_width = self.grip_width.ok_or(
@@ -175,28 +178,28 @@ impl ExerciseLibraryEntryEntity {
     }
 }
 
-pub fn create(app_context: &AppContext, req: ExerciseLibraryEntryReq) -> Result<(), String> {
+pub fn create(tx: &Transaction<Sqlite>, req: ExerciseLibraryEntryReq) -> Result<(), String> {
     // TODO insert statement
     Ok(())
 }
 
-pub fn update(app_context: &AppContext, valid_exercise: ValidExercise) -> Result<(), String> {
+pub fn update(tx: &Transaction<Sqlite>, valid_exercise: ValidExercise) -> Result<(), String> {
     // TODO update statement
     Ok(())
 }
 
-pub fn delete(app_context: &AppContext, exercise_id: u32) -> Result<(), String> {
+pub fn delete(tx: &Transaction<Sqlite>, exercise_id: u32) -> Result<(), String> {
     // TODO delete statement
     // prevent deleting exercises that are in use by workouts
     Ok(())
 }
 
-pub fn get_one(app_context: &AppContext, exercise_id: u32) -> Result<(), String> {
+pub fn get_one(tx: &Transaction<Sqlite>, exercise_id: u32) -> Result<(), String> {
     // TODO select statement and map to ValidExercise
     Ok(())
 }
 
-pub fn paginate(app_context: &AppContext) -> Result<(), String> {
+pub fn paginate(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO add filtering and paging
     Ok(())
 }
