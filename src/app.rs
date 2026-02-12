@@ -32,7 +32,7 @@ impl WorkoutUtil {
                 (Page::Home, "Home"),
                 (Page::Exercises, "Exercises"),
                 (Page::Workouts, "Workouts"),
-                (Page::StartWorkout, "StartWorkout"),
+                (Page::StartWorkout, "Start Workout"),
             ] {
                 let is_active = self.current_page == page;
 
@@ -50,7 +50,6 @@ impl WorkoutUtil {
 
                 if ui.add(button).clicked() {
                     self.current_page = page;
-                    println!("Clicked {}", label);
                 }
             }
         });
@@ -66,26 +65,28 @@ impl WorkoutUtil {
     }
 
     fn render_home(&mut self, ui: &mut egui::Ui) {
-        ui.label("Home Page");
+        ui.heading("Home");
+        ui.label("Welcome to Workout Util!");
     }
 
     fn render_exercises(&mut self, ui: &mut egui::Ui) {
-        ui.label("Exercises Page");
+        ui.heading("Exercises");
     }
 
     fn render_workouts(&mut self, ui: &mut egui::Ui) {
-        ui.label("Workouts Page");
+        ui.heading("Workouts");
     }
 
     fn render_start_workout(&mut self, ui: &mut egui::Ui) {
-        ui.label("Start Workout Page");
+        ui.heading("Start Workout");
     }
 
     fn footer(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            ui.label("Workout Timer");
+            ui.label("Rest Timer");
             ui.separator();
             ui.label("00:00:00");
+            // TODO add time input and make it count down and emit noise when done
             if ui.button("Start").clicked() {
                 println!("Clicked start");
             }
@@ -119,7 +120,6 @@ impl eframe::App for WorkoutUtil {
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Workout Util");
             self.render_page(ui);
         });
     }
