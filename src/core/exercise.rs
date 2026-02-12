@@ -1,41 +1,7 @@
 use crate::context::AppContext;
-
-// data models
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PushOrPull {
-    Push,
-    Pull,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum DynamicOrStatic {
-    Dynamic,
-    Static,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum StraightOrBentArm {
-    Straight,
-    Bent,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum SquatOrHinge {
-    Squat,
-    Hinge,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum UpperOrLower {
-    Upper,
-    Lower,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CompoundOrIsolation {
-    Compound,
-    Isolation,
-}
+use crate::core::enums::{
+    CompoundOrIsolation, DynamicOrStatic, PushOrPull, SquatOrHinge, StraightOrBentArm, UpperOrLower,
+};
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

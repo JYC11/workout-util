@@ -1,61 +1,16 @@
 use crate::context::AppContext;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum LeverVariation {
-    Tuck,
-    AdvancedTuck,
-    Straddle,
-    OneLeg,
-    HalfLay,
-    Full,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Grip {
-    Pronated,
-    Supinated,
-    Neutral,
-    GymnasticsRing,
-    Floor,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum GripWidth {
-    Wide,
-    Neutral,
-    Narrow,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Equipment {
-    LowParallettes,
-    HighParallettes,
-    Bench,
-    Dumbbells,
-    Barbell,
-    SmithMachine,
-    GymnasticsRings,
-    PullUpBar,
-    DipBar,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Band {
-    Yellow,
-    Red,
-    Black,
-    Purple,
-    Green,
-}
+use crate::core::enums::{Band, Equipment, Grip, GripWidth, LeverVariation};
+use chrono::{DateTime, Utc};
+use sqlx::types::Json;
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutExerciseEntity {
     pub id: u32,
-    pub created_at: String, // should be some kinda DateTime
-    pub workout_id: u32,    // fk to Workout
-    pub exercise_id: u32,   // fk to ExerciseLibraryEntry
-    pub code: String,       // A1, A2, B1, B2 ...
+    pub created_at: DateTime<Utc>, // should be some kinda DateTime
+    pub workout_id: u32,           // fk to Workout
+    pub exercise_id: u32,          // fk to ExerciseLibraryEntry
+    pub code: String,              // A1, A2, B1, B2 ...
     pub sets_target: u8,
     pub reps_or_seconds_target: u8,
     pub working_weight: u8,
@@ -64,8 +19,8 @@ pub struct WorkoutExerciseEntity {
     pub lever_variation: Option<LeverVariation>,
     pub grip: Option<Grip>,
     pub grip_width: Option<GripWidth>,
-    pub equipments: String, // Vec<Equipment>,
-    pub bands: String,      // Vec<Band>,
+    pub equipments: Json<Vec<Equipment>>,
+    pub bands: Json<Vec<Band>>,
     pub description: Option<String>,
 }
 // WorkoutEntity -> WorkoutExerciseEntity, 1:many
@@ -92,8 +47,8 @@ pub struct WorkoutExerciseReq {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutEntity {
     pub id: u32,
-    pub created_at: String,   // should be some kinda DateTime
-    pub workout_plan_id: u32, // fk to WorkoutPlanEntity
+    pub created_at: DateTime<Utc>, // should be some kinda DateTime
+    pub workout_plan_id: u32,      // fk to WorkoutPlanEntity
     pub name: String,
     pub description: Option<String>,
 }
@@ -108,7 +63,7 @@ pub struct WorkoutReq {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutPlanEntity {
     pub id: u32,
-    pub created_at: String, // should be some kinda DateTime
+    pub created_at: DateTime<Utc>, // should be some kinda DateTime
     pub name: String,
     pub description: Option<String>,
     pub currently_using: bool,

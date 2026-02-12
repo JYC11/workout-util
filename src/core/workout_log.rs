@@ -1,4 +1,5 @@
 use crate::context::AppContext;
+use chrono::{DateTime, NaiveDate, Utc};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutLogEntity {
@@ -25,8 +26,8 @@ pub struct WorkoutLogReq {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutLogGroupEntity {
     pub id: u32,
-    pub created_at: String, // should be some kinda DateTime
-    pub date: String,       // should be some kinda Date
+    pub created_at: DateTime<Utc>, // should be some kinda DateTime
+    pub date: NaiveDate,           // should be some kinda Date
 }
 // WorkoutLogGroupEntity -> WorkoutLogEntity 1:many
 
