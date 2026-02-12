@@ -158,8 +158,9 @@ pub async fn get_one_log(
     })
 }
 
-pub async fn paginate_logs(tx: &mut Transaction<'_, Sqlite>) {
+pub async fn paginate_logs(tx: &mut Transaction<'_, Sqlite>) -> Result<(), String> {
     // TODO
+    Ok(())
 }
 
 #[cfg(test)]
@@ -252,7 +253,7 @@ mod tests {
         let pool = setup_db().await;
         let mut tx = pool.begin().await.unwrap();
 
-        let today = chrono::Utc::now().naive_utc().date();
+        let today = Utc::now().naive_utc().date();
 
         // Create
         let group_id = create_log_group(&mut tx, today, Some("Morning session".to_string()))
@@ -283,7 +284,7 @@ mod tests {
 
         let (_plan_id, workout_id, workout_exercise_id) = create_workout_exercise(&mut tx).await;
 
-        let today = chrono::Utc::now().naive_utc().date();
+        let today = Utc::now().naive_utc().date();
         let group_id = create_log_group(&mut tx, today, None).await.unwrap();
 
         // Create log
@@ -328,7 +329,7 @@ mod tests {
         let mut tx = pool.begin().await.unwrap();
 
         let (_plan_id, workout_id, workout_exercise_id) = create_workout_exercise(&mut tx).await;
-        let today = chrono::Utc::now().naive_utc().date();
+        let today = Utc::now().naive_utc().date();
         let group_id = create_log_group(&mut tx, today, None).await.unwrap();
 
         // Create a log referencing the group

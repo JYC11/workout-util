@@ -354,7 +354,7 @@ pub async fn get_one_exercise(
     row.to_valid_struct()
 }
 
-pub fn paginate(tx: &mut Transaction<'_, Sqlite>) -> Result<(), String> {
+pub fn paginate_exercises(tx: &mut Transaction<'_, Sqlite>) -> Result<(), String> {
     // TODO add filtering and paging
     Ok(())
 }

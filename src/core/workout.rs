@@ -193,7 +193,7 @@ pub async fn get_one_workout_plan(
     })
 }
 
-pub fn paginate_workout_plan(tx: &Transaction<Sqlite>) -> Result<(), String> {
+pub fn paginate_workout_plans(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO
     Ok(())
 }
@@ -285,7 +285,7 @@ pub async fn get_one_workout(
     })
 }
 
-pub fn paginate_one_workout(tx: &Transaction<Sqlite>) -> Result<(), String> {
+pub fn paginate_workouts(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO
     Ok(())
 }
@@ -413,7 +413,7 @@ pub async fn get_one_workout_exercise(
     })
 }
 
-pub fn paginate_one_workout_exercise(tx: &Transaction<Sqlite>) -> Result<(), String> {
+pub fn paginate_workout_exercises(tx: &Transaction<Sqlite>) -> Result<(), String> {
     // TODO
     Ok(())
 }
