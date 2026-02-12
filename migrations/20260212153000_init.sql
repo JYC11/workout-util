@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     working_weight INTEGER NOT NULL,
     rest_period_seconds INTEGER NOT NULL,
     tempo TEXT NOT NULL,
+    emom  BOOLEAN NOT NULL,
     equipments TEXT NOT NULL,         -- Serialized List/JSON
     bands TEXT NOT NULL,              -- Serialized List/JSON
     description TEXT,

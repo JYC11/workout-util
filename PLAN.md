@@ -37,9 +37,9 @@
 ## flow
 - home/entry page (tab 0)
 - log exercises in exercise library (tab 1)
-- log equipments in equipment library (tab 2)
-- create workout by selecting exercises and equipment (tab 3)
-- during workout, log progress and use template from the workout (tab 4)
+- create workout by selecting exercises and equipment (tab 2)
+- during workout, log progress and use template from the workout (tab 3)
   - use metronome to count seconds
   - use rest timer between sets
+  - nice to have: EMOM timer
 

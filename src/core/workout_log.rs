@@ -224,8 +224,8 @@ mod tests {
             r#"INSERT INTO workout_exercises (
                 created_at, workout_id, exercise_id, code,
                 sets_target, reps_or_seconds_target, working_weight,
-                rest_period_seconds, tempo, equipments, bands, description
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
+                rest_period_seconds, tempo, emom, equipments, bands, description
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(chrono::Utc::now())
         .bind(workout_id)
@@ -236,6 +236,7 @@ mod tests {
         .bind(50u8)
         .bind(60u8)
         .bind("2010")
+        .bind(false)
         .bind(sqlx::types::Json(vec![Equipment::Barbell]))
         .bind(sqlx::types::Json(vec![Band::Yellow]))
         .bind(Option::<String>::None)

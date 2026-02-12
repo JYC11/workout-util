@@ -8,3 +8,4 @@ sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "sqlite", "c
 serde = { version = "1.0", features = ["derive"] }
 tokio = { version = "1.49.0", features = ["macros"]}
 chrono = { version = "0.4.43", features = ["serde"] }
+eframe = "0.33.3"

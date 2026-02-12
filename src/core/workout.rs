@@ -17,6 +17,7 @@ pub struct WorkoutExerciseEntity {
     pub working_weight: u16,
     pub rest_period_seconds: u8,
     pub tempo: String,
+    pub emom: bool,
     pub equipments: Json<Vec<Equipment>>,
     pub bands: Json<Vec<Band>>,
     pub description: Option<String>,
@@ -34,6 +35,7 @@ pub struct WorkoutExerciseReq {
     pub working_weight: u16,
     pub rest_period_seconds: u8,
     pub tempo: String,
+    pub emom: bool,
     pub equipments: Vec<Equipment>,
     pub bands: Vec<Band>,
     pub description: Option<String>,
@@ -303,8 +305,8 @@ pub async fn create_workout_exercise(
         INSERT INTO workout_exercises (
             created_at, workout_id, exercise_id, code,
             sets_target, reps_or_seconds_target, working_weight,
-            rest_period_seconds, tempo, equipments, bands, description
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            rest_period_seconds, tempo, emom, equipments, bands, description
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
     .bind(created_at)
@@ -316,6 +318,7 @@ pub async fn create_workout_exercise(
     .bind(req.working_weight)
     .bind(req.rest_period_seconds)
     .bind(&req.tempo)
+    .bind(&req.emom)
     .bind(Json(req.equipments))
     .bind(Json(req.bands))
     .bind(&req.description)
@@ -337,7 +340,8 @@ pub async fn update_workout_exercise(
         UPDATE workout_exercises
         SET workout_id = ?, exercise_id = ?, code = ?,
             sets_target = ?, reps_or_seconds_target = ?, working_weight = ?,
-            rest_period_seconds = ?, tempo = ?, equipments = ?, bands = ?, description = ?
+            rest_period_seconds = ?, tempo = ?, emom = ?, equipments = ?,
+            bands = ?, description = ?
         WHERE id = ?
         "#,
     )
@@ -349,6 +353,7 @@ pub async fn update_workout_exercise(
     .bind(req.working_weight)
     .bind(req.rest_period_seconds)
     .bind(&req.tempo)
+    .bind(req.emom)
     .bind(Json(req.equipments))
     .bind(Json(req.bands))
     .bind(&req.description)
@@ -459,6 +464,7 @@ mod tests {
             working_weight: 100,
             rest_period_seconds: 90,
             tempo: "2010".to_string(),
+            emom: false,
             equipments: vec![Equipment::Barbell],
             bands: vec![Band::Black],
             description: Some("Standard set".to_string()),
