@@ -86,9 +86,3 @@ pub enum CompoundOrIsolation {
     Compound,
     Isolation,
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PaginationDirection {
-    Forward,
-    Backward,
-}

@@ -1,13 +1,16 @@
+use crate::db::pagination_support::{
+    PaginationDirection, PaginationRes, get_cursors, keyset_paginate,
+};
 use crate::workout::enums::{
-    CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PaginationDirection,
-    PushOrPull, SquatOrHinge, StraightOrBentArm, UpperOrLower,
+    CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
+    SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
 use crate::workout::exercise_dto::{
     BentArmCompoundExercise, ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes,
-    LowerBodyCompoundExercise, LowerBodyIsolationExercise, PaginatedExerciseLibraryRes,
+    LowerBodyCompoundExercise, LowerBodyIsolationExercise,
     StraightArmCompoundExercise, UpperBodyIsolationExercise, ValidExercise,
 };
-use sqlx::{FromRow, Sqlite, Transaction};
+use sqlx::{FromRow, QueryBuilder, Sqlite, Transaction};
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]
@@ -352,9 +355,29 @@ pub async fn paginate_exercises(
     limit: u32,
     cursor: Option<u32>,
     direction: PaginationDirection,
-) -> Result<PaginatedExerciseLibraryRes, String> {
-    let mut qb = sqlx::QueryBuilder::new("SELECT * FROM exercise_library WHERE 1=1");
+) -> Result<PaginationRes<ExerciseLibraryRes>, String> {
+    let mut qb = QueryBuilder::new("SELECT * FROM exercise_library WHERE 1=1");
 
+    pagination_filters(filter_req, &mut qb);
+
+    keyset_paginate(limit, cursor, direction, &mut qb);
+
+    let mut rows: Vec<ExerciseLibraryRes> = qb
+        .build_query_as()
+        .fetch_all(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to paginate exercises: {}", e))?;
+
+    let cursors = get_cursors(limit, cursor, direction, &mut rows);
+
+    Ok(PaginationRes {
+        items: rows,
+        next_cursor: cursors.next_cursor,
+        prev_cursor: cursors.prev_cursor,
+    })
+}
+
+fn pagination_filters(filter_req: Option<ExerciseLibraryFilterReq>, qb: &mut QueryBuilder<Sqlite>) {
     if let Some(req) = filter_req {
         if let Some(name) = req.name {
             qb.push(" AND name LIKE ");
@@ -460,61 +483,6 @@ pub async fn paginate_exercises(
             }
         }
     }
-
-    match direction {
-        PaginationDirection::Forward => {
-            if let Some(last_id) = cursor {
-                qb.push(" AND id > ");
-                qb.push_bind(last_id);
-            }
-            qb.push(" ORDER BY id ASC LIMIT ");
-        }
-        PaginationDirection::Backward => {
-            if let Some(first_id) = cursor {
-                qb.push(" AND id < ");
-                qb.push_bind(first_id);
-            }
-            qb.push(" ORDER BY id DESC LIMIT ");
-        }
-    }
-    qb.push_bind(limit + 1);
-
-    let mut rows: Vec<ExerciseLibraryRes> = qb
-        .build_query_as()
-        .fetch_all(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to paginate exercises: {}", e))?;
-
-    let has_more = rows.len() > limit as usize;
-    if has_more {
-        rows.pop();
-    }
-
-    if matches!(direction, PaginationDirection::Backward) {
-        rows.reverse();
-    }
-
-    let start_id = rows.first().map(|r| r.id);
-    let end_id = rows.last().map(|r| r.id);
-
-    let (next_cursor, prev_cursor) = match direction {
-        PaginationDirection::Forward => {
-            let next = if has_more { end_id } else { None };
-            let prev = if cursor.is_some() { start_id } else { None };
-            (next, prev)
-        }
-        PaginationDirection::Backward => {
-            let next = end_id;
-            let prev = if has_more { start_id } else { None };
-            (next, prev)
-        }
-    };
-
-    Ok(PaginatedExerciseLibraryRes {
-        items: rows,
-        next_cursor,
-        prev_cursor,
-    })
 }
 
 #[cfg(test)]

@@ -1,3 +1,4 @@
+use crate::db::pagination_support::HasId;
 use crate::workout::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
@@ -35,11 +36,10 @@ pub struct ExerciseLibraryRes {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct PaginatedExerciseLibraryRes {
-    pub items: Vec<ExerciseLibraryRes>,
-    pub next_cursor: Option<u32>,
-    pub prev_cursor: Option<u32>,
+impl HasId for ExerciseLibraryRes {
+    fn id(&self) -> u32 {
+        self.id
+    }
 }
 
 pub struct ExerciseLibraryFilterReq {

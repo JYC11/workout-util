@@ -1,3 +1,5 @@
+pub mod pagination_support;
+
 use sqlx::migrate::MigrateDatabase;
 use sqlx::{Pool, Sqlite, SqlitePool};
 
