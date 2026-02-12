@@ -28,6 +28,7 @@ pub struct WorkoutLogGroupEntity {
     pub id: u32,
     pub created_at: DateTime<Utc>, // should be some kinda DateTime
     pub date: NaiveDate,           // should be some kinda Date
+    pub notes: Option<String>,
 }
 // WorkoutLogGroupEntity -> WorkoutLogEntity 1:many
 

@@ -1,7 +1,5 @@
 use crate::context::AppContext;
-use crate::core::enums::{
-    CompoundOrIsolation, DynamicOrStatic, PushOrPull, SquatOrHinge, StraightOrBentArm, UpperOrLower,
-};
+use crate::core::enums::{CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull, SquatOrHinge, StraightOrBentArm, UpperOrLower};
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -14,6 +12,9 @@ pub struct ExerciseLibraryEntryEntity {
     pub squat_or_hinge: Option<SquatOrHinge>,
     pub upper_or_lower: UpperOrLower,
     pub compound_or_isolation: CompoundOrIsolation,
+    pub lever_variation: Option<LeverVariation>,
+    pub grip: Option<Grip>,
+    pub grip_width: Option<GripWidth>,
     pub description: Option<String>,
 }
 
@@ -25,6 +26,9 @@ pub struct ExerciseLibraryEntryReq {
     pub squat_or_hinge: Option<SquatOrHinge>,
     pub upper_or_lower: UpperOrLower,
     pub compound_or_isolation: CompoundOrIsolation,
+    pub lever_variation: Option<LeverVariation>,
+    pub grip: Option<Grip>,
+    pub grip_width: Option<GripWidth>,
     pub description: Option<String>,
 }
 
@@ -36,6 +40,9 @@ pub struct UpperBodyCompoundExercise {
     pub push_or_pull: PushOrPull,
     pub dynamic_or_static: DynamicOrStatic,
     pub straight_or_bent: StraightOrBentArm,
+    pub lever_variation: Option<LeverVariation>,
+    pub grip: Grip,
+    pub grip_width: GripWidth,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -80,6 +87,9 @@ impl ExerciseLibraryEntryEntity {
             squat_or_hinge: req.squat_or_hinge,
             upper_or_lower: req.upper_or_lower,
             compound_or_isolation: req.compound_or_isolation,
+            lever_variation: req.lever_variation,
+            grip: req.grip,
+            grip_width: req.grip_width,
             description: req.description,
         };
         entity.to_valid_struct()?; // validate
@@ -98,6 +108,16 @@ impl ExerciseLibraryEntryEntity {
                             .to_string(),
                     )?;
 
+                    let grip = self.grip.ok_or(
+                        "Upper body compound exercises require a grip designation"
+                            .to_string(),
+                    )?;
+
+                    let grip_width = self.grip_width.ok_or(
+                        "Upper body compound exercises require a grip width designation"
+                            .to_string(),
+                    )?;
+
                     Ok(ValidExercise::UpperBodyCompound(
                         UpperBodyCompoundExercise {
                             id: self.id,
@@ -105,6 +125,9 @@ impl ExerciseLibraryEntryEntity {
                             push_or_pull,
                             dynamic_or_static: self.dynamic_or_static,
                             straight_or_bent,
+                            lever_variation: self.lever_variation,
+                            grip,
+                            grip_width,
                         },
                     ))
                 }
@@ -164,6 +187,7 @@ pub fn update(app_context: &AppContext, valid_exercise: ValidExercise) -> Result
 
 pub fn delete(app_context: &AppContext, exercise_id: u32) -> Result<(), String> {
     // TODO delete statement
+    // prevent deleting exercises that are in use by workouts
     Ok(())
 }
 

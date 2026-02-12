@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS exercise_library_entries (
     squat_or_hinge TEXT,              -- Enum: Squat, Hinge (Nullable)
     upper_or_lower TEXT NOT NULL,     -- Enum: Upper, Lower
     compound_or_isolation TEXT NOT NULL, -- Enum: Compound, Isolation
+    lever_variation TEXT,             -- Enum (Nullable)
+    grip TEXT,                        -- Enum (Nullable)
+    grip_width TEXT,                  -- Enum (Nullable)
     description TEXT
 );
 
@@ -38,9 +41,6 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     working_weight INTEGER NOT NULL,
     rest_period_seconds INTEGER NOT NULL,
     tempo TEXT NOT NULL,
-    lever_variation TEXT,             -- Enum (Nullable)
-    grip TEXT,                        -- Enum (Nullable)
-    grip_width TEXT,                  -- Enum (Nullable)
     equipments TEXT NOT NULL,         -- Serialized List/JSON
     bands TEXT NOT NULL,              -- Serialized List/JSON
     description TEXT,
@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS workout_log_groups (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT NOT NULL,
     date TEXT NOT NULL
+    notes TEXT
 );
 
 CREATE TABLE IF NOT EXISTS workout_logs (

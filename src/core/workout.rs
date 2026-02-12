@@ -16,9 +16,6 @@ pub struct WorkoutExerciseEntity {
     pub working_weight: u8,
     pub rest_period_seconds: u8,
     pub tempo: String,
-    pub lever_variation: Option<LeverVariation>,
-    pub grip: Option<Grip>,
-    pub grip_width: Option<GripWidth>,
     pub equipments: Json<Vec<Equipment>>,
     pub bands: Json<Vec<Band>>,
     pub description: Option<String>,
@@ -35,9 +32,6 @@ pub struct WorkoutExerciseReq {
     pub working_weight: u8,
     pub rest_period_seconds: u8,
     pub tempo: String,
-    pub lever_variation: Option<LeverVariation>,
-    pub grip: Option<Grip>,
-    pub grip_width: Option<GripWidth>,
     pub equipments: Vec<Equipment>,
     pub bands: Vec<Band>,
     pub description: Option<String>,
@@ -125,11 +119,14 @@ pub fn delete_workout_plan(app_context: &AppContext, id: u32) -> Result<(), Stri
 
 pub fn delete_workout(app_context: &AppContext, id: u32) -> Result<(), String> {
     // TODO
+    // prevent deleting workouts that are in use by workout logs
+    // prevent deleting workout that are used by workout plans
     Ok(())
 }
 
 pub fn delete_workout_exercise(app_context: &AppContext, id: u32) -> Result<(), String> {
     // TODO
+    // prevent deleting exercises that are in use by workouts and that have logs
     Ok(())
 }
 
