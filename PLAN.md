@@ -51,12 +51,26 @@
     - View Mode: Details (Name, Lever, Grip).
     - Edit Mode: Input fields.
   - Design Tip: Use egui::ComboBox for Lever and Equipment selection to keep data clean.
-- Tab 2: Create Workout (Builder)
-  - Layout: Two distinct vertical lists side-by-side.
-  - Left: "Available Exercises" (draggable or clickable "+" button).
-  - Right: "Current Workout Plan" (list of selected exercises).
+- Tab 2: Create Workout (CRUD)
+  - Layout: Two distinct sub pages you can switch between.
+  - Subpage 1: "Available Exercises" (draggable or clickable "+" button).
+    - Workout Exercises CRUD
+  - Subpage 2: "Current Workouts"
+    - Workout Plans CRUD, construct a workout from selected workout exercises.
+    - EG:
+      - Workout A = [Exercise 1, Exercise 2, Exercise 3]
+      - Workout B = [Exercise 4, Exercise 5, Exercise 6]
   - Action: "Start this Workout" button at the bottom right.
-- Tab 3: Active Workout (The Logger)
+- Tab 3: Create Workout Plans (CRUD)
+  - Layout: List of workouts.
+  - Builds Workout Plan from selected Workouts
+    - A workout plan is a list of workouts
+    - EG:
+      - Workout Plan A = [Workout A, Workout B]
+        - repeated every week, for N weeks.
+        - Alternating A and B with rest days in between.
+  - Action: "Start this Workout" button at the bottom right. 
+- Tab 4: Active Workout (The Logger)
   - Header: Current Exercise Name (Big Font).
   - Content:
     - Previous Data: "Last time: 5 sets, 10 reps @ 20kg" (faded text).

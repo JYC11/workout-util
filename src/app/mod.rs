@@ -1,10 +1,12 @@
 mod exercises_page;
 mod start_workout_page;
 mod workouts_page;
+mod workouts_plans_page;
 
 use crate::app::exercises_page::ExercisesPage;
 use crate::app::start_workout_page::StartWorkoutPage;
 use crate::app::workouts_page::WorkoutsPage;
+use crate::app::workouts_plans_page::WorkoutPlansPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 
@@ -13,6 +15,7 @@ pub enum MainPageState {
     Home,
     Exercises,
     Workouts,
+    WorkoutPlans,
     StartWorkout,
 }
 
@@ -21,6 +24,7 @@ pub struct WorkoutUtil {
     current_page: MainPageState,
     exercises_page: ExercisesPage,
     workouts_page: WorkoutsPage,
+    workout_plans_page: WorkoutPlansPage,
     start_workout_page: StartWorkoutPage,
 }
 
@@ -31,6 +35,7 @@ impl WorkoutUtil {
             current_page: MainPageState::Home,
             exercises_page: ExercisesPage::default(),
             workouts_page: WorkoutsPage::default(),
+            workout_plans_page: WorkoutPlansPage::default(),
             start_workout_page: StartWorkoutPage::default(),
         }
     }
@@ -45,6 +50,7 @@ impl WorkoutUtil {
                 (MainPageState::Home, "Home"),
                 (MainPageState::Exercises, "Exercises"),
                 (MainPageState::Workouts, "Workouts"),
+                (MainPageState::WorkoutPlans, "Workout Plans"),
                 (MainPageState::StartWorkout, "Start Workout"),
             ] {
                 let is_active = self.current_page == page;
@@ -73,6 +79,7 @@ impl WorkoutUtil {
             MainPageState::Home => self.render_home(ui),
             MainPageState::Exercises => self.render_exercises(ui),
             MainPageState::Workouts => self.render_workouts(ui),
+            MainPageState::WorkoutPlans => self.render_workout_plans(ui),
             MainPageState::StartWorkout => self.render_start_workout(ui),
         }
     }
@@ -90,6 +97,11 @@ impl WorkoutUtil {
     fn render_workouts(&mut self, ui: &mut egui::Ui) {
         ui.heading("Workouts");
         self.workouts_page.render_page(&mut self.pool, ui);
+    }
+
+    fn render_workout_plans(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Workouts Plans");
+        self.workout_plans_page.render_page(&mut self.pool, ui);
     }
 
     fn render_start_workout(&mut self, ui: &mut egui::Ui) {

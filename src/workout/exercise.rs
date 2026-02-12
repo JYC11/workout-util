@@ -1,5 +1,5 @@
 use crate::db::pagination_support::{
-    PaginationDirection, PaginationRes, get_cursors, keyset_paginate,
+    PaginationDirection, PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
 use crate::workout::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
@@ -352,13 +352,11 @@ pub async fn get_one_exercise<'e, E: Executor<'e, Database = Sqlite>>(
 pub async fn paginate_exercises<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     filter_req: Option<ExerciseLibraryFilterReq>,
-    limit: u32,
-    cursor: Option<u32>,
-    direction: PaginationDirection,
+    pagination_params: PaginationParams,
 ) -> Result<PaginationRes<ExerciseLibraryRes>, String> {
     let mut qb = QueryBuilder::new("SELECT * FROM exercise_library WHERE 1=1");
     pagination_filters(filter_req, &mut qb);
-    keyset_paginate(limit, cursor, direction, &mut qb);
+    keyset_paginate(&pagination_params, &mut qb);
 
     let mut rows: Vec<ExerciseLibraryRes> = qb
         .build_query_as()
@@ -366,7 +364,7 @@ pub async fn paginate_exercises<'e, E: Executor<'e, Database = Sqlite>>(
         .await
         .map_err(|e| format!("Failed to paginate exercises: {}", e))?;
 
-    let cursors = get_cursors(limit, cursor, direction, &mut rows);
+    let cursors = get_cursors(&pagination_params, &mut rows);
     Ok(PaginationRes {
         items: rows,
         next_cursor: cursors.next_cursor,
@@ -552,9 +550,17 @@ mod tests {
             .expect("Failed to create exercise");
 
         // 2. Test Paginate (ID should be 1 for first entry)
-        let result = paginate_exercises(&mut *tx, None, 1, None, PaginationDirection::Forward)
-            .await
-            .expect("Failed to get exercise");
+        let result = paginate_exercises(
+            &mut *tx,
+            None,
+            PaginationParams {
+                limit: 1,
+                cursor: None,
+                direction: PaginationDirection::Forward,
+            },
+        )
+        .await
+        .expect("Failed to get exercise");
 
         assert_eq!(result.items.len(), 1);
         assert_eq!(result.items[0].id, 1);
@@ -565,36 +571,68 @@ mod tests {
         create_exercise(&mut tx, req2).await.unwrap(); // ID 2
 
         // Test Paginate Page 1 (Limit 1)
-        let result = paginate_exercises(&mut *tx, None, 1, None, PaginationDirection::Forward)
-            .await
-            .unwrap();
+        let result = paginate_exercises(
+            &mut *tx,
+            None,
+            PaginationParams {
+                limit: 1,
+                cursor: None,
+                direction: PaginationDirection::Forward,
+            },
+        )
+        .await
+        .unwrap();
         assert_eq!(result.items.len(), 1);
         assert_eq!(result.items[0].id, 1);
         assert_eq!(result.next_cursor, Some(1));
         assert_eq!(result.prev_cursor, None);
 
         // Test Paginate Page 2 (Limit 1, Cursor 1)
-        let result = paginate_exercises(&mut *tx, None, 1, Some(1), PaginationDirection::Forward)
-            .await
-            .unwrap();
+        let result = paginate_exercises(
+            &mut *tx,
+            None,
+            PaginationParams {
+                limit: 1,
+                cursor: Some(1),
+                direction: PaginationDirection::Forward,
+            },
+        )
+        .await
+        .unwrap();
         assert_eq!(result.items.len(), 1);
         assert_eq!(result.items[0].id, 2);
         assert_eq!(result.next_cursor, None);
         assert_eq!(result.prev_cursor, Some(2)); // Can go back
 
         // Test Paginate Backward from Page 2 (Cursor 2)
-        let result = paginate_exercises(&mut *tx, None, 1, Some(2), PaginationDirection::Backward)
-            .await
-            .unwrap();
+        let result = paginate_exercises(
+            &mut *tx,
+            None,
+            PaginationParams {
+                limit: 1,
+                cursor: Some(2),
+                direction: PaginationDirection::Backward,
+            },
+        )
+        .await
+        .unwrap();
         assert_eq!(result.items.len(), 1);
         assert_eq!(result.items[0].id, 1);
         assert_eq!(result.next_cursor, Some(1)); // Can go forward
         assert_eq!(result.prev_cursor, None); // No more previous
 
         // 3. Test cursor at 2 should return no results (Forward)
-        let result = paginate_exercises(&mut *tx, None, 1, Some(2), PaginationDirection::Forward)
-            .await
-            .expect("Failed to get exercise");
+        let result = paginate_exercises(
+            &mut *tx,
+            None,
+            PaginationParams {
+                limit: 1,
+                cursor: Some(2),
+                direction: PaginationDirection::Forward,
+            },
+        )
+        .await
+        .expect("Failed to get exercise");
 
         assert_eq!(result.items.len(), 0);
 
@@ -613,9 +651,11 @@ mod tests {
                 grip: None,
                 grip_width: None,
             }),
-            1,
-            None,
-            PaginationDirection::Forward,
+            PaginationParams {
+                limit: 1,
+                cursor: None,
+                direction: PaginationDirection::Forward,
+            },
         )
         .await
         .expect("Failed to get exercise");
@@ -637,9 +677,11 @@ mod tests {
                 grip: None,
                 grip_width: None,
             }),
-            1,
-            None,
-            PaginationDirection::Forward,
+            PaginationParams {
+                limit: 1,
+                cursor: None,
+                direction: PaginationDirection::Forward,
+            },
         )
         .await
         .expect("Failed to get exercise");

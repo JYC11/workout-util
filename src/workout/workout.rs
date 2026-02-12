@@ -1,3 +1,4 @@
+use crate::db::pagination_support::PaginationParams;
 use crate::workout::enums::{Band, Equipment};
 use crate::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutPlanReq, WorkoutPlanRes, WorkoutReq, WorkoutRes,
@@ -138,6 +139,7 @@ pub async fn get_one_workout_plan<'e, E: Executor<'e, Database = Sqlite>>(
 
 pub fn paginate_workout_plans<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
+    pagination_params: PaginationParams,
 ) -> Result<(), String> {
     // TODO
     Ok(())
@@ -230,7 +232,10 @@ pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
     })
 }
 
-pub fn paginate_workouts(tx: &Transaction<Sqlite>) -> Result<(), String> {
+pub fn paginate_workouts<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
+    pagination_params: PaginationParams,
+) -> Result<(), String> {
     // TODO
     Ok(())
 }
@@ -316,10 +321,6 @@ pub async fn delete_workout_exercise(
     tx: &mut Transaction<'_, Sqlite>,
     id: u32,
 ) -> Result<(), String> {
-    // Schema has:
-    //   workout_logs.workout_exercise_id → workout_exercises(id) ON DELETE RESTRICT
-    // So if any log exists, deletion fails → satisfies "prevent deleting if logged"
-
     let result = sqlx::query("DELETE FROM workout_exercises WHERE id = ?")
         .bind(id)
         .execute(&mut **tx)
@@ -361,7 +362,10 @@ pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
     })
 }
 
-pub fn paginate_workout_exercises(tx: &Transaction<Sqlite>) -> Result<(), String> {
+pub fn paginate_workout_exercises<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
+    pagination_params: PaginationParams,
+) -> Result<(), String> {
     // TODO
     Ok(())
 }

@@ -1,3 +1,4 @@
+use crate::db::pagination_support::PaginationParams;
 use crate::workout::workout_log_dto::{WorkoutLogReq, WorkoutLogRes};
 use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::{Executor, FromRow, Sqlite, Transaction};
@@ -136,7 +137,10 @@ pub async fn get_one_log<'e, E: Executor<'e, Database = Sqlite>>(
     })
 }
 
-pub async fn paginate_logs(tx: &mut Transaction<'_, Sqlite>) -> Result<(), String> {
+pub async fn paginate_logs<'e, E: Executor<'e, Database = Sqlite>>(
+    executor: E,
+    pagination_params: PaginationParams,
+) -> Result<(), String> {
     // TODO
     Ok(())
 }
