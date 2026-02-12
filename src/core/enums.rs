@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use sqlx::Type;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type)]
@@ -26,7 +27,7 @@ pub enum GripWidth {
     Narrow,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type, Serialize, Deserialize)]
 pub enum Equipment {
     LowParallettes,
     HighParallettes,
@@ -39,7 +40,7 @@ pub enum Equipment {
     DipBar,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type, Serialize, Deserialize)]
 pub enum Band {
     Yellow,
     Red,

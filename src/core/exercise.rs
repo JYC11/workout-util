@@ -115,8 +115,8 @@ impl ExerciseLibraryEntity {
                     match straight_or_bent {
                         StraightOrBentArm::Straight => {
                             self.lever_variation.ok_or(
-                               "Upper body compound exercises require a lever variation designation"
-                           )?;
+                                "Upper body compound exercises require a lever variation designation"
+                            )?;
                         }
                         _ => {}
                     }
@@ -190,10 +190,10 @@ impl ExerciseLibraryEntity {
 pub async fn create_exercise(
     tx: &mut Transaction<'_, Sqlite>,
     req: ExerciseLibraryReq,
-) -> Result<(), String> {
+) -> Result<u32, String> {
     let entity = ExerciseLibraryEntity::from_req(req)?;
 
-    sqlx::query(
+    let result = sqlx::query(
         r#"
         INSERT INTO exercise_library (
             name, push_or_pull, dynamic_or_static, straight_or_bent, squat_or_hinge,
@@ -201,22 +201,24 @@ pub async fn create_exercise(
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
-    .bind(entity.name)
-    .bind(entity.push_or_pull)
-    .bind(entity.dynamic_or_static)
-    .bind(entity.straight_or_bent)
-    .bind(entity.squat_or_hinge)
-    .bind(entity.upper_or_lower)
-    .bind(entity.compound_or_isolation)
-    .bind(entity.lever_variation)
-    .bind(entity.grip)
-    .bind(entity.grip_width)
-    .bind(entity.description)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to create exercise: {}", e))?;
+        .bind(entity.name)
+        .bind(entity.push_or_pull)
+        .bind(entity.dynamic_or_static)
+        .bind(entity.straight_or_bent)
+        .bind(entity.squat_or_hinge)
+        .bind(entity.upper_or_lower)
+        .bind(entity.compound_or_isolation)
+        .bind(entity.lever_variation)
+        .bind(entity.grip)
+        .bind(entity.grip_width)
+        .bind(entity.description)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create exercise: {}", e))?;
 
-    Ok(())
+    let id = result.last_insert_rowid() as u32;
+
+    Ok(id)
 }
 
 pub async fn update_exercise(
@@ -299,20 +301,20 @@ pub async fn update_exercise(
         WHERE id = ?
         "#,
     )
-    .bind(name)
-    .bind(push_or_pull)
-    .bind(dynamic_or_static)
-    .bind(straight_or_bent)
-    .bind(squat_or_hinge)
-    .bind(upper_or_lower)
-    .bind(compound_or_isolation)
-    .bind(lever_variation)
-    .bind(grip)
-    .bind(grip_width)
-    .bind(id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to update exercise: {}", e))?;
+        .bind(name)
+        .bind(push_or_pull)
+        .bind(dynamic_or_static)
+        .bind(straight_or_bent)
+        .bind(squat_or_hinge)
+        .bind(upper_or_lower)
+        .bind(compound_or_isolation)
+        .bind(lever_variation)
+        .bind(grip)
+        .bind(grip_width)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update exercise: {}", e))?;
 
     if result.rows_affected() == 0 {
         return Err("Exercise not found".to_string());
@@ -361,7 +363,7 @@ pub fn paginate(tx: &mut Transaction<'_, Sqlite>) -> Result<(), String> {
 mod tests {
     use super::*;
     use crate::core::enums::*;
-    use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::db::{init_db, IN_MEMORY_DB_URL};
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {

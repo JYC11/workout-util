@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS workout_logs (
     rep_number_or_seconds INTEGER NOT NULL,
     weight INTEGER NOT NULL,
     description TEXT,
-    FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
+    FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE RESTRICT,
     FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE RESTRICT,
     FOREIGN KEY (workout_log_group_id) REFERENCES workout_log_groups(id) ON DELETE RESTRICT
 );
