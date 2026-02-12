@@ -1,8 +1,15 @@
+mod exercises_page;
+mod start_workout_page;
+mod workouts_page;
+
+use crate::app::exercises_page::ExercisesPage;
+use crate::app::start_workout_page::StartWorkoutPage;
+use crate::app::workouts_page::WorkoutsPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Page {
+pub enum MainPageState {
     Home,
     Exercises,
     Workouts,
@@ -11,14 +18,20 @@ pub enum Page {
 
 pub struct WorkoutUtil {
     pool: Pool<Sqlite>,
-    current_page: Page,
+    current_page: MainPageState,
+    exercises_page: ExercisesPage,
+    workouts_page: WorkoutsPage,
+    start_workout_page: StartWorkoutPage,
 }
 
 impl WorkoutUtil {
     pub fn new(_cc: &eframe::CreationContext<'_>, pool: Pool<Sqlite>) -> Self {
         Self {
             pool,
-            current_page: Page::Home,
+            current_page: MainPageState::Home,
+            exercises_page: ExercisesPage::default(),
+            workouts_page: WorkoutsPage::default(),
+            start_workout_page: StartWorkoutPage::default(),
         }
     }
 
@@ -29,10 +42,10 @@ impl WorkoutUtil {
             ui.add_space(10.0);
 
             for (page, label) in [
-                (Page::Home, "Home"),
-                (Page::Exercises, "Exercises"),
-                (Page::Workouts, "Workouts"),
-                (Page::StartWorkout, "Start Workout"),
+                (MainPageState::Home, "Home"),
+                (MainPageState::Exercises, "Exercises"),
+                (MainPageState::Workouts, "Workouts"),
+                (MainPageState::StartWorkout, "Start Workout"),
             ] {
                 let is_active = self.current_page == page;
 
@@ -57,10 +70,10 @@ impl WorkoutUtil {
 
     fn render_page(&mut self, ui: &mut egui::Ui) {
         match self.current_page {
-            Page::Home => self.render_home(ui),
-            Page::Exercises => self.render_exercises(ui),
-            Page::Workouts => self.render_workouts(ui),
-            Page::StartWorkout => self.render_start_workout(ui),
+            MainPageState::Home => self.render_home(ui),
+            MainPageState::Exercises => self.render_exercises(ui),
+            MainPageState::Workouts => self.render_workouts(ui),
+            MainPageState::StartWorkout => self.render_start_workout(ui),
         }
     }
 
@@ -71,14 +84,17 @@ impl WorkoutUtil {
 
     fn render_exercises(&mut self, ui: &mut egui::Ui) {
         ui.heading("Exercises");
+        self.exercises_page.render_page(&mut self.pool, ui);
     }
 
     fn render_workouts(&mut self, ui: &mut egui::Ui) {
         ui.heading("Workouts");
+        self.workouts_page.render_page(&mut self.pool, ui);
     }
 
     fn render_start_workout(&mut self, ui: &mut egui::Ui) {
         ui.heading("Start Workout");
+        self.start_workout_page.render_page(&mut self.pool, ui);
     }
 
     fn footer(&mut self, ui: &mut egui::Ui) {

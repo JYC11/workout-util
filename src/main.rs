@@ -1,5 +1,5 @@
+use crate::app::WorkoutUtil;
 use crate::db::{DEFAULT_DB_URL, init_db};
-use app::WorkoutUtil;
 use eframe::egui;
 
 mod app;
