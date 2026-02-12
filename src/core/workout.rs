@@ -23,7 +23,24 @@ pub struct WorkoutExerciseEntity {
 // WorkoutEntity -> WorkoutExerciseEntity, 1:many
 // ExerciseLibraryEntry -> WorkoutExerciseEntity, 1:many
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutExerciseReq {
+    pub workout_id: u32,
+    pub exercise_id: u32,
+    pub code: String,
+    pub sets_target: u8,
+    pub reps_or_seconds_target: u8,
+    pub working_weight: u8,
+    pub rest_period_seconds: u8,
+    pub tempo: String,
+    pub equipments: Vec<Equipment>,
+    pub bands: Vec<Band>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct WorkoutExerciseRes {
+    pub id: u32,
     pub workout_id: u32,
     pub exercise_id: u32,
     pub code: String,
@@ -47,7 +64,16 @@ pub struct WorkoutEntity {
     pub description: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutReq {
+    pub workout_plan_id: u32,
+    pub name: String,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct WorkoutRes {
+    pub id: u32,
     pub workout_plan_id: u32,
     pub name: String,
     pub description: Option<String>,
@@ -63,7 +89,16 @@ pub struct WorkoutPlanEntity {
     pub currently_using: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutPlanReq {
+    pub name: String,
+    pub description: Option<String>,
+    pub currently_using: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct WorkoutPlanRes {
+    pub id: u32,
     pub name: String,
     pub description: Option<String>,
     pub currently_using: bool,

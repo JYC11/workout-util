@@ -21,6 +21,7 @@ pub struct ExerciseLibraryEntity {
     pub description: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ExerciseLibraryReq {
     pub name: String,
     pub push_or_pull: Option<PushOrPull>,
@@ -110,6 +111,15 @@ impl ExerciseLibraryEntity {
                         "Upper body compound exercises require a straight/bent arm designation"
                             .to_string(),
                     )?;
+
+                    match straight_or_bent {
+                        StraightOrBentArm::Straight => {
+                            self.lever_variation.ok_or(
+                               "Upper body compound exercises require a lever variation designation"
+                           )?;
+                        }
+                        _ => {}
+                    }
 
                     let grip = self.grip.ok_or(
                         "Upper body compound exercises require a grip designation".to_string(),
@@ -463,7 +473,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_valid_struct_upper_body_compound() {
+    fn test_to_valid_struct_upper_body_dynamic_compound() {
         let entity = ExerciseLibraryEntity {
             id: 1,
             name: "Bench Press".to_string(),
@@ -512,6 +522,35 @@ mod tests {
         assert_eq!(
             invalid.to_valid_struct().err().unwrap(),
             "Upper body compound exercises require a grip width designation"
+        );
+    }
+
+    #[test]
+    fn test_to_valid_struct_upper_body_static_compound() {
+        let entity = ExerciseLibraryEntity {
+            id: 1,
+            name: "Planche".to_string(),
+            push_or_pull: Some(PushOrPull::Push),
+            dynamic_or_static: DynamicOrStatic::Static,
+            straight_or_bent: Some(StraightOrBentArm::Straight),
+            squat_or_hinge: None,
+            upper_or_lower: UpperOrLower::Upper,
+            compound_or_isolation: CompoundOrIsolation::Compound,
+            lever_variation: Some(LeverVariation::Full),
+            grip: Some(Grip::Pronated),
+            grip_width: Some(GripWidth::Shoulder),
+            description: None,
+        };
+
+        // 1. Success case
+        assert!(entity.to_valid_struct().is_ok());
+
+        // 2. Missing Lever Variation
+        let mut invalid = entity.clone();
+        invalid.lever_variation = None;
+        assert_eq!(
+            invalid.to_valid_struct().err().unwrap(),
+            "Upper body compound exercises require a lever variation designation"
         );
     }
 
