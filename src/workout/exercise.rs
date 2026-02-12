@@ -1,11 +1,11 @@
 use crate::workout::enums::{
-    CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
-    SquatOrHinge, StraightOrBentArm, UpperOrLower,
+    CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PaginationDirection,
+    PushOrPull, SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
 use crate::workout::exercise_dto::{
-    BentArmCompoundExercise, ExerciseLibraryReq, LowerBodyCompoundExercise,
-    LowerBodyIsolationExercise, StraightArmCompoundExercise, UpperBodyIsolationExercise,
-    ValidExercise,
+    BentArmCompoundExercise, ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes,
+    LowerBodyCompoundExercise, LowerBodyIsolationExercise, PaginatedExerciseLibraryRes,
+    StraightArmCompoundExercise, UpperBodyIsolationExercise, ValidExercise,
 };
 use sqlx::{FromRow, Sqlite, Transaction};
 
@@ -346,9 +346,175 @@ pub async fn get_one_exercise(
     row.to_valid_struct()
 }
 
-pub fn paginate_exercises(tx: &mut Transaction<'_, Sqlite>) -> Result<(), String> {
-    // TODO add filtering and paging
-    Ok(())
+pub async fn paginate_exercises(
+    tx: &mut Transaction<'_, Sqlite>,
+    filter_req: Option<ExerciseLibraryFilterReq>,
+    limit: u32,
+    cursor: Option<u32>,
+    direction: PaginationDirection,
+) -> Result<PaginatedExerciseLibraryRes, String> {
+    let mut qb = sqlx::QueryBuilder::new("SELECT * FROM exercise_library WHERE 1=1");
+
+    if let Some(req) = filter_req {
+        if let Some(name) = req.name {
+            qb.push(" AND name LIKE ");
+            qb.push_bind(format!("%{}%", name));
+        }
+
+        if let Some(vals) = req.push_or_pull {
+            if !vals.is_empty() {
+                qb.push(" AND push_or_pull IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+
+        if let Some(vals) = req.dynamic_or_static {
+            if !vals.is_empty() {
+                qb.push(" AND dynamic_or_static IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+
+        if let Some(vals) = req.straight_or_bent {
+            if !vals.is_empty() {
+                qb.push(" AND straight_or_bent IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+
+        if let Some(vals) = req.squat_or_hinge {
+            if !vals.is_empty() {
+                qb.push(" AND squat_or_hinge IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+
+        if let Some(vals) = req.upper_or_lower {
+            if !vals.is_empty() {
+                qb.push(" AND upper_or_lower IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+
+        if let Some(vals) = req.compound_or_isolation {
+            if !vals.is_empty() {
+                qb.push(" AND compound_or_isolation IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+
+        if let Some(vals) = req.lever_variation {
+            if !vals.is_empty() {
+                qb.push(" AND lever_variation IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+
+        if let Some(vals) = req.grip {
+            if !vals.is_empty() {
+                qb.push(" AND grip IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+
+        if let Some(vals) = req.grip_width {
+            if !vals.is_empty() {
+                qb.push(" AND grip_width IN (");
+                let mut sep = qb.separated(", ");
+                for v in vals {
+                    sep.push_bind(v);
+                }
+                sep.push_unseparated(")");
+            }
+        }
+    }
+
+    match direction {
+        PaginationDirection::Forward => {
+            if let Some(last_id) = cursor {
+                qb.push(" AND id > ");
+                qb.push_bind(last_id);
+            }
+            qb.push(" ORDER BY id ASC LIMIT ");
+        }
+        PaginationDirection::Backward => {
+            if let Some(first_id) = cursor {
+                qb.push(" AND id < ");
+                qb.push_bind(first_id);
+            }
+            qb.push(" ORDER BY id DESC LIMIT ");
+        }
+    }
+    qb.push_bind(limit + 1);
+
+    let mut rows: Vec<ExerciseLibraryRes> = qb
+        .build_query_as()
+        .fetch_all(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to paginate exercises: {}", e))?;
+
+    let has_more = rows.len() > limit as usize;
+    if has_more {
+        rows.pop();
+    }
+
+    if matches!(direction, PaginationDirection::Backward) {
+        rows.reverse();
+    }
+
+    let start_id = rows.first().map(|r| r.id);
+    let end_id = rows.last().map(|r| r.id);
+
+    let (next_cursor, prev_cursor) = match direction {
+        PaginationDirection::Forward => {
+            let next = if has_more { end_id } else { None };
+            let prev = if cursor.is_some() { start_id } else { None };
+            (next, prev)
+        }
+        PaginationDirection::Backward => {
+            let next = end_id;
+            let prev = if has_more { start_id } else { None };
+            (next, prev)
+        }
+    };
+
+    Ok(PaginatedExerciseLibraryRes {
+        items: rows,
+        next_cursor,
+        prev_cursor,
+    })
 }
 
 #[cfg(test)]
@@ -404,6 +570,116 @@ mod tests {
             }
             _ => panic!("Exercise type mismatch, expected UpperBodyCompound"),
         }
+
+        tx.commit().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_paginate_exercises() {
+        let pool = setup_db().await;
+        let mut tx = pool.begin().await.unwrap();
+
+        let req = mock_upper_compound_req("Bench Press");
+
+        // 1. Test Create
+        create_exercise(&mut tx, req)
+            .await
+            .expect("Failed to create exercise");
+
+        // 2. Test Paginate (ID should be 1 for first entry)
+        let result = paginate_exercises(&mut tx, None, 1, None, PaginationDirection::Forward)
+            .await
+            .expect("Failed to get exercise");
+
+        assert_eq!(result.items.len(), 1);
+        assert_eq!(result.items[0].id, 1);
+        assert_eq!(result.next_cursor, None); // Only 1 item, no next page
+
+        // Create another exercise to test pagination boundaries
+        let req2 = mock_upper_compound_req("Overhead Press");
+        create_exercise(&mut tx, req2).await.unwrap(); // ID 2
+
+        // Test Paginate Page 1 (Limit 1)
+        let result = paginate_exercises(&mut tx, None, 1, None, PaginationDirection::Forward)
+            .await
+            .unwrap();
+        assert_eq!(result.items.len(), 1);
+        assert_eq!(result.items[0].id, 1);
+        assert_eq!(result.next_cursor, Some(1));
+        assert_eq!(result.prev_cursor, None);
+
+        // Test Paginate Page 2 (Limit 1, Cursor 1)
+        let result = paginate_exercises(&mut tx, None, 1, Some(1), PaginationDirection::Forward)
+            .await
+            .unwrap();
+        assert_eq!(result.items.len(), 1);
+        assert_eq!(result.items[0].id, 2);
+        assert_eq!(result.next_cursor, None);
+        assert_eq!(result.prev_cursor, Some(2)); // Can go back
+
+        // Test Paginate Backward from Page 2 (Cursor 2)
+        let result = paginate_exercises(&mut tx, None, 1, Some(2), PaginationDirection::Backward)
+            .await
+            .unwrap();
+        assert_eq!(result.items.len(), 1);
+        assert_eq!(result.items[0].id, 1);
+        assert_eq!(result.next_cursor, Some(1)); // Can go forward
+        assert_eq!(result.prev_cursor, None); // No more previous
+
+        // 3. Test cursor at 2 should return no results (Forward)
+        let result = paginate_exercises(&mut tx, None, 1, Some(2), PaginationDirection::Forward)
+            .await
+            .expect("Failed to get exercise");
+
+        assert_eq!(result.items.len(), 0);
+
+        // 4. Test filter by type Pull should return no results
+        let result = paginate_exercises(
+            &mut tx,
+            Some(ExerciseLibraryFilterReq {
+                name: None,
+                push_or_pull: Some(vec![PushOrPull::Pull]),
+                dynamic_or_static: None,
+                straight_or_bent: None,
+                squat_or_hinge: None,
+                upper_or_lower: None,
+                compound_or_isolation: None,
+                lever_variation: None,
+                grip: None,
+                grip_width: None,
+            }),
+            1,
+            None,
+            PaginationDirection::Forward,
+        )
+        .await
+        .expect("Failed to get exercise");
+
+        assert_eq!(result.items.len(), 0);
+
+        // 4. Test filter by type Push should return 1 result
+        let result = paginate_exercises(
+            &mut tx,
+            Some(ExerciseLibraryFilterReq {
+                name: None,
+                push_or_pull: Some(vec![PushOrPull::Push]),
+                dynamic_or_static: None,
+                straight_or_bent: None,
+                squat_or_hinge: None,
+                upper_or_lower: None,
+                compound_or_isolation: None,
+                lever_variation: None,
+                grip: None,
+                grip_width: None,
+            }),
+            1,
+            None,
+            PaginationDirection::Forward,
+        )
+        .await
+        .expect("Failed to get exercise");
+
+        assert_eq!(result.items.len(), 1);
 
         tx.commit().await.unwrap();
     }
