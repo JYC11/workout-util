@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS exercise_library_entries (
+CREATE TABLE IF NOT EXISTS exercise_library (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     push_or_pull TEXT,                -- Enum: Push, Pull (Nullable)
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS workouts (
     workout_plan_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
-    FOREIGN KEY (workout_plan_id) REFERENCES workout_plans(id) ON DELETE CASCADE
+    FOREIGN KEY (workout_plan_id) REFERENCES workout_plans(id) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS workout_exercises (
@@ -44,14 +44,14 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     equipments TEXT NOT NULL,         -- Serialized List/JSON
     bands TEXT NOT NULL,              -- Serialized List/JSON
     description TEXT,
-    FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
-    FOREIGN KEY (exercise_id) REFERENCES exercise_library_entries(id) ON DELETE RESTRICT
+    FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE RESTRICT,
+    FOREIGN KEY (exercise_id) REFERENCES exercise_library(id) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS workout_log_groups (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT NOT NULL,
-    date TEXT NOT NULL
+    date TEXT NOT NULL,
     notes TEXT
 );
 
@@ -65,6 +65,6 @@ CREATE TABLE IF NOT EXISTS workout_logs (
     weight INTEGER NOT NULL,
     description TEXT,
     FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
-    FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE CASCADE,
-    FOREIGN KEY (workout_log_group_id) REFERENCES workout_log_groups(id) ON DELETE CASCADE
+    FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercises(id) ON DELETE RESTRICT,
+    FOREIGN KEY (workout_log_group_id) REFERENCES workout_log_groups(id) ON DELETE RESTRICT
 );

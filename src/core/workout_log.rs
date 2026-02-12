@@ -1,8 +1,7 @@
-use crate::context::AppContext;
 use chrono::{DateTime, NaiveDate, Utc};
-use sqlx::{Sqlite, Transaction};
+use sqlx::{FromRow, Sqlite, Transaction};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]
 pub struct WorkoutLogEntity {
     pub id: u32,
     pub workout_id: u32,           // fk to WorkoutEntity
@@ -24,7 +23,7 @@ pub struct WorkoutLogReq {
     pub description: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]
 pub struct WorkoutLogGroupEntity {
     pub id: u32,
     pub created_at: DateTime<Utc>, // should be some kinda DateTime
@@ -38,17 +37,17 @@ pub fn create_log_group(tx: &Transaction<Sqlite>) -> Result<(), String> {
     Ok(())
 }
 
-pub fn create_log(tx: &Transaction<Sqlite>, req: WorkoutLogReq) -> Result<(), String> {
+pub fn create_log(tx: &mut Transaction<'_, Sqlite>, req: WorkoutLogReq) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn delete_log_group(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
+pub fn delete_log_group(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     Ok(())
 }
 
-pub fn delete_log(tx: &Transaction<Sqlite>, id: u32) -> Result<(), String> {
+pub fn delete_log(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result<(), String> {
     // TODO
     Ok(())
 }

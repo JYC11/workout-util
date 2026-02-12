@@ -22,7 +22,7 @@ pub enum Grip {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type)]
 pub enum GripWidth {
     Wide,
-    Neutral,
+    Shoulder,
     Narrow,
 }
 
