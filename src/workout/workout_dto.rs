@@ -34,30 +34,15 @@ pub struct WorkoutExerciseRes {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutReq {
-    pub workout_plan_id: u32,
     pub name: String,
     pub description: Option<String>,
+    pub active: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutRes {
     pub id: u32,
-    pub workout_plan_id: u32,
     pub name: String,
     pub description: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct WorkoutPlanReq {
-    pub name: String,
-    pub description: Option<String>,
-    pub currently_using: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct WorkoutPlanRes {
-    pub id: u32,
-    pub name: String,
-    pub description: Option<String>,
-    pub currently_using: bool,
+    pub active: bool,
 }

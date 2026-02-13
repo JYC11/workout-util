@@ -1,8 +1,6 @@
 use crate::db::pagination_support::PaginationParams;
 use crate::workout::enums::{Band, Equipment};
-use crate::workout::workout_dto::{
-    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutPlanReq, WorkoutPlanRes, WorkoutReq, WorkoutRes,
-};
+use crate::workout::workout_dto::{WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::types::Json;
@@ -34,115 +32,9 @@ pub struct WorkoutExerciseEntity {
 pub struct WorkoutEntity {
     pub id: u32,
     pub created_at: DateTime<Utc>, // should be some kinda DateTime
-    pub workout_plan_id: u32,      // fk to WorkoutPlanEntity
     pub name: String,
     pub description: Option<String>,
-}
-
-// mapped to a db row
-#[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow, Deserialize)]
-pub struct WorkoutPlanEntity {
-    pub id: u32,
-    pub created_at: DateTime<Utc>, // should be some kinda DateTime
-    pub name: String,
-    pub description: Option<String>,
-    pub currently_using: bool,
-}
-
-// WorkoutPlanEntity -> WorkoutEntity, 1:many
-
-pub async fn create_workout_plan(
-    tx: &mut Transaction<'_, Sqlite>,
-    req: WorkoutPlanReq,
-) -> Result<u32, String> {
-    let created_at = Utc::now();
-
-    let result = sqlx::query(
-        r#"
-        INSERT INTO workout_plans (created_at, name, description, currently_using)
-        VALUES (?, ?, ?, ?)
-        "#,
-    )
-    .bind(created_at)
-    .bind(&req.name)
-    .bind(&req.description)
-    .bind(req.currently_using)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to create workout plan: {}", e))?;
-
-    let id = result.last_insert_rowid() as u32;
-    Ok(id)
-}
-
-pub async fn update_workout_plan(
-    tx: &mut Transaction<'_, Sqlite>,
-    id: u32,
-    req: WorkoutPlanReq,
-) -> Result<(), String> {
-    let result = sqlx::query(
-        r#"
-        UPDATE workout_plans
-        SET name = ?, description = ?, currently_using = ?
-        WHERE id = ?
-        "#,
-    )
-    .bind(&req.name)
-    .bind(&req.description)
-    .bind(req.currently_using)
-    .bind(id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to update workout plan: {}", e))?;
-
-    if result.rows_affected() == 0 {
-        return Err("Workout plan not found".to_string());
-    }
-
-    Ok(())
-}
-
-pub async fn delete_workout_plan(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result<(), String> {
-    // SQLite will block deletion if referenced by workouts (due to ON DELETE RESTRICT)
-    let result = sqlx::query("DELETE FROM workout_plans WHERE id = ?")
-        .bind(id)
-        .execute(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to delete workout plan (may be in use): {}", e))?;
-
-    if result.rows_affected() == 0 {
-        return Err("Workout plan not found".to_string());
-    }
-
-    Ok(())
-}
-
-// TODO needs to join workouts
-pub async fn get_one_workout_plan<'e, E: Executor<'e, Database = Sqlite>>(
-    executor: E,
-    id: u32,
-) -> Result<WorkoutPlanRes, String> {
-    let row: WorkoutPlanEntity = sqlx::query_as("SELECT * FROM workout_plans WHERE id = ?")
-        .bind(id)
-        .fetch_optional(executor)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?
-        .ok_or_else(|| "Workout plan not found".to_string())?;
-
-    Ok(WorkoutPlanRes {
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        currently_using: row.currently_using,
-    })
-}
-
-pub fn paginate_workout_plans<'e, E: Executor<'e, Database = Sqlite>>(
-    executor: E,
-    pagination_params: PaginationParams,
-) -> Result<(), String> {
-    // TODO
-    Ok(())
+    pub active: bool,
 }
 
 // --- WORKOUT ---
@@ -155,14 +47,14 @@ pub async fn create_workout(
 
     let result = sqlx::query(
         r#"
-        INSERT INTO workouts (created_at, workout_plan_id, name, description)
+        INSERT INTO workouts (created_at, name, description, active)
         VALUES (?, ?, ?, ?)
         "#,
     )
     .bind(created_at)
-    .bind(req.workout_plan_id)
     .bind(&req.name)
     .bind(&req.description)
+    .bind(&req.active)
     .execute(&mut **tx)
     .await
     .map_err(|e| format!("Failed to create workout: {}", e))?;
@@ -179,13 +71,13 @@ pub async fn update_workout(
     let result = sqlx::query(
         r#"
         UPDATE workouts
-        SET workout_plan_id = ?, name = ?, description = ?
+        SET name = ?, description = ?, active = ?
         WHERE id = ?
         "#,
     )
-    .bind(req.workout_plan_id)
     .bind(&req.name)
     .bind(&req.description)
+    .bind(&req.active)
     .bind(id)
     .execute(&mut **tx)
     .await
@@ -226,9 +118,9 @@ pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
 
     Ok(WorkoutRes {
         id: row.id,
-        workout_plan_id: row.workout_plan_id,
         name: row.name,
         description: row.description,
+        active: row.active,
     })
 }
 
@@ -362,14 +254,6 @@ pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
     })
 }
 
-pub fn paginate_workout_exercises<'e, E: Executor<'e, Database = Sqlite>>(
-    executor: E,
-    pagination_params: PaginationParams,
-) -> Result<(), String> {
-    // TODO
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -381,19 +265,11 @@ mod tests {
         init_db(IN_MEMORY_DB_URL).await
     }
 
-    fn mock_workout_plan_req(name: &str) -> WorkoutPlanReq {
-        WorkoutPlanReq {
-            name: name.to_string(),
-            description: Some(format!("{} description", name)),
-            currently_using: false,
-        }
-    }
-
-    fn mock_workout_req(workout_plan_id: u32, name: &str) -> WorkoutReq {
+    fn mock_workout_req(name: &str) -> WorkoutReq {
         WorkoutReq {
-            workout_plan_id,
             name: name.to_string(),
             description: Some(format!("{} notes", name)),
+            active: true,
         }
     }
 
@@ -418,48 +294,6 @@ mod tests {
         }
     }
 
-    // --- WORKOUT PLAN TESTS ---
-
-    #[tokio::test]
-    async fn test_workout_plan_crud() {
-        let pool = setup_db().await;
-        let mut tx = pool.begin().await.unwrap();
-
-        // Create
-        let plan_id = create_workout_plan(&mut tx, mock_workout_plan_req("Beginner Plan"))
-            .await
-            .expect("Failed to create workout plan");
-
-        // Get
-        let plan = get_one_workout_plan(&mut *tx, plan_id)
-            .await
-            .expect("Failed to get workout plan");
-        assert_eq!(plan.name, "Beginner Plan");
-        assert_eq!(plan.currently_using, false);
-
-        // Update
-        let mut updated_req = mock_workout_plan_req("Advanced Plan");
-        updated_req.currently_using = true;
-        update_workout_plan(&mut tx, plan_id, updated_req)
-            .await
-            .expect("Failed to update workout plan");
-
-        let updated_plan = get_one_workout_plan(&mut *tx, plan_id)
-            .await
-            .expect("Failed to get updated plan");
-        assert_eq!(updated_plan.name, "Advanced Plan");
-        assert_eq!(updated_plan.currently_using, true);
-
-        // Delete
-        delete_workout_plan(&mut tx, plan_id)
-            .await
-            .expect("Failed to delete workout plan");
-
-        assert!(get_one_workout_plan(&mut *tx, plan_id).await.is_err());
-
-        tx.commit().await.unwrap();
-    }
-
     // --- WORKOUT TESTS ---
 
     #[tokio::test]
@@ -467,13 +301,8 @@ mod tests {
         let pool = setup_db().await;
         let mut tx = pool.begin().await.unwrap();
 
-        // First create a workout plan
-        let plan_id = create_workout_plan(&mut tx, mock_workout_plan_req("Test Plan"))
-            .await
-            .unwrap();
-
         // Create workout
-        let workout_id = create_workout(&mut tx, mock_workout_req(plan_id, "Upper Body A"))
+        let workout_id = create_workout(&mut tx, mock_workout_req("Upper Body A"))
             .await
             .expect("Failed to create workout");
 
@@ -482,10 +311,9 @@ mod tests {
             .await
             .expect("Failed to get workout");
         assert_eq!(workout.name, "Upper Body A");
-        assert_eq!(workout.workout_plan_id, plan_id);
 
         // Update
-        let mut updated_req = mock_workout_req(plan_id, "Lower Body A");
+        let mut updated_req = mock_workout_req("Lower Body A");
         updated_req.description = Some("Leg day!".to_string());
         update_workout(&mut tx, workout_id, updated_req)
             .await
@@ -515,10 +343,7 @@ mod tests {
         let mut tx = pool.begin().await.unwrap();
 
         // Setup dependencies
-        let plan_id = create_workout_plan(&mut tx, mock_workout_plan_req("CRUD Plan"))
-            .await
-            .unwrap();
-        let workout_id = create_workout(&mut tx, mock_workout_req(plan_id, "Test Workout"))
+        let workout_id = create_workout(&mut tx, mock_workout_req("Test Workout"))
             .await
             .unwrap();
 
@@ -597,10 +422,7 @@ mod tests {
         let pool = setup_db().await;
         let mut tx = pool.begin().await.unwrap();
 
-        let plan_id = create_workout_plan(&mut tx, mock_workout_plan_req("Integrity Plan"))
-            .await
-            .unwrap();
-        let workout_id = create_workout(&mut tx, mock_workout_req(plan_id, "Protected Workout"))
+        let workout_id = create_workout(&mut tx, mock_workout_req("Protected Workout"))
             .await
             .unwrap();
 
@@ -631,10 +453,7 @@ mod tests {
         let pool = setup_db().await;
         let mut tx = pool.begin().await.unwrap();
 
-        let plan_id = create_workout_plan(&mut tx, mock_workout_plan_req("Log Plan"))
-            .await
-            .unwrap();
-        let workout_id = create_workout(&mut tx, mock_workout_req(plan_id, "Logged Workout"))
+        let workout_id = create_workout(&mut tx, mock_workout_req("Logged Workout"))
             .await
             .unwrap();
 

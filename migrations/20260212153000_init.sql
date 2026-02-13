@@ -13,21 +13,12 @@ CREATE TABLE IF NOT EXISTS exercise_library (
     description TEXT
 );
 
-CREATE TABLE IF NOT EXISTS workout_plans (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    created_at TEXT NOT NULL,         -- DateTime stored as String
-    name TEXT NOT NULL,
-    description TEXT,
-    currently_using BOOLEAN NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS workouts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT NOT NULL,         -- DateTime stored as String
-    workout_plan_id INTEGER NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
-    FOREIGN KEY (workout_plan_id) REFERENCES workout_plans(id) ON DELETE RESTRICT
+    active BOOLEAN NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS workout_exercises (
