@@ -1,21 +1,18 @@
 use crate::app::utils;
-use crate::app::utils::{filter_combo, CommonUiState};
+use crate::app::utils::{CommonUiState, filter_combo};
 use crate::db::pagination_support::{PaginationRes, PaginationState};
 use crate::workout::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
 use crate::workout::exercise::{
-    create_exercise, delete_exercise, get_one_exercise, paginate_exercises, update_exercise,
-    ExerciseLibraryEntity,
+    ExerciseLibraryEntity, create_exercise, delete_exercise, get_one_exercise, paginate_exercises,
+    update_exercise,
 };
-use crate::workout::exercise_dto::{
-    exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name,
-    ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise,
-};
+use crate::workout::exercise_dto::{ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise, exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name, ExerciseName};
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::{Duration, Instant};
 
 pub struct ExercisesPage {
@@ -634,128 +631,131 @@ impl ExercisesPage {
     }
 
     fn render_list(&mut self, ui: &mut egui::Ui, pool: &mut Pool<Sqlite>) {
-        ui.horizontal(|ui| {
-            ui.heading("Exercises");
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button("Add New").clicked() {
-                    self.state = ExercisesPageState::CreateNew;
-                    self.form_data = exercise_library_default_req();
+        ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Limit:");
+                let mut limit = self.pagination_state.limit;
+                if ui
+                    .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
+                    .changed()
+                {
+                    self.pagination_state.limit = limit;
+                    self.trigger_list_refresh();
+                }
+
+                if self.pagination_state.has_previous() {
+                    if ui.button("Previous").clicked() {
+                        self.pagination_state.go_backwards();
+                        self.trigger_list_refresh();
+                    }
+                }
+
+                if self.pagination_state.has_next() {
+                    if ui.button("Next").clicked() {
+                        self.pagination_state.go_forwards();
+                        self.trigger_list_refresh();
+                    }
                 }
             });
-        });
-        ui.separator();
+            ui.separator();
 
-        ui.horizontal(|ui| {
-            ui.label("Search:");
-            if ui.text_edit_singleline(&mut self.filter_name).changed() {
-                self.pagination_state.reset_pagination();
-                self.trigger_list_refresh();
-            }
-        });
-
-        self.render_filters(ui);
-
-        ui.separator();
-
-        enum ListAction {
-            Details(u32),
-            Edit(u32),
-            Delete(u32),
-        }
-
-        let mut action = None;
-
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            egui::Grid::new("list_grid")
-                .striped(true)
-                .min_col_width(100.0)
-                .show(ui, |ui| {
-                    ui.label("Name");
-                    ui.label("Group");
-                    ui.label("Type");
-                    ui.label("Actions");
-                    ui.end_row();
-
-                    for item in &self.list_items {
-                        ui.label(&item.name);
-                        ui.label(format!("{:?}", item.upper_or_lower));
-                        ui.label(format!("{:?}", item.compound_or_isolation));
-
-                        ui.horizontal(|ui| {
-                            if ui.button("Details").clicked() {
-                                action = Some(ListAction::Details(item.id));
-                            }
-                            if ui.button("Edit").clicked() {
-                                action = Some(ListAction::Edit(item.id));
-                            }
-                            if ui.button("Delete").clicked() {
-                                action = Some(ListAction::Delete(item.id));
-                            }
-                        });
-                        ui.end_row();
-                    }
-                });
-        });
-
-        if let Some(act) = action {
-            match act {
-                ListAction::Details(id) => {
-                    self.fetch_detail(pool, id);
-                    self.state = ExercisesPageState::DetailsOpenView;
-                }
-                ListAction::Edit(id) => {
-                    self.fetch_detail(pool, id);
-                    self.state = ExercisesPageState::DetailsEditView;
-                }
-                ListAction::Delete(id) => {
-                    self.common_ui_state.set_as_loading();
-                    let sender = self.sender.clone();
-                    let pool = pool.clone();
-                    tokio::spawn(async move {
-                        let mut conn = match pool.begin().await {
-                            Ok(c) => c,
-                            Err(e) => {
-                                let _ = sender.send(ExercisesPageMsg::Error(e.to_string()));
-                                return;
-                            }
-                        };
-                        if let Err(e) = delete_exercise(&mut conn, id).await {
-                            let _ = sender.send(ExercisesPageMsg::Error(e));
-                        } else {
-                            let _ = conn.commit().await;
-                            let _ = sender.send(ExercisesPageMsg::Deleted);
+            ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
+                ui.horizontal(|ui| {
+                    ui.heading("Exercises");
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button("Add New").clicked() {
+                            self.state = ExercisesPageState::CreateNew;
+                            self.form_data = exercise_library_default_req();
                         }
                     });
+                });
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    ui.label("Search:");
+                    if ui.text_edit_singleline(&mut self.filter_name).changed() {
+                        self.pagination_state.reset_pagination();
+                        self.trigger_list_refresh();
+                    }
+                });
+
+                self.render_filters(ui);
+
+                ui.separator();
+
+                enum ListAction {
+                    Details(u32),
+                    Edit(u32),
+                    Delete(u32),
                 }
-            }
-        }
 
-        ui.separator();
+                let mut action = None;
 
-        ui.horizontal(|ui| {
-            ui.label("Limit:");
-            let mut limit = self.pagination_state.limit;
-            if ui
-                .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
-                .changed()
-            {
-                self.pagination_state.limit = limit;
-                self.trigger_list_refresh();
-            }
+                egui::ScrollArea::vertical().show(ui, |ui| {
+                    egui::Grid::new("list_grid")
+                        .striped(true)
+                        .min_col_width(100.0)
+                        .show(ui, |ui| {
+                            ui.label("Name");
+                            ui.label("Group");
+                            ui.label("Type");
+                            ui.label("Actions");
+                            ui.end_row();
 
-            if self.pagination_state.has_previous() {
-                if ui.button("Previous").clicked() {
-                    self.pagination_state.go_backwards();
-                    self.trigger_list_refresh();
+                            for item in &self.list_items {
+                                ui.label(&item.full_name());
+                                ui.label(format!("{:?}", item.upper_or_lower));
+                                ui.label(format!("{:?}", item.compound_or_isolation));
+
+                                ui.horizontal(|ui| {
+                                    if ui.button("Details").clicked() {
+                                        action = Some(ListAction::Details(item.id));
+                                    }
+                                    if ui.button("Edit").clicked() {
+                                        action = Some(ListAction::Edit(item.id));
+                                    }
+                                    if ui.button("Delete").clicked() {
+                                        action = Some(ListAction::Delete(item.id));
+                                    }
+                                });
+                                ui.end_row();
+                            }
+                        });
+                });
+
+                if let Some(act) = action {
+                    match act {
+                        ListAction::Details(id) => {
+                            self.fetch_detail(pool, id);
+                            self.state = ExercisesPageState::DetailsOpenView;
+                        }
+                        ListAction::Edit(id) => {
+                            self.fetch_detail(pool, id);
+                            self.state = ExercisesPageState::DetailsEditView;
+                        }
+                        ListAction::Delete(id) => {
+                            self.common_ui_state.set_as_loading();
+                            let sender = self.sender.clone();
+                            let pool = pool.clone();
+                            tokio::spawn(async move {
+                                let mut conn = match pool.begin().await {
+                                    Ok(c) => c,
+                                    Err(e) => {
+                                        let _ = sender.send(ExercisesPageMsg::Error(e.to_string()));
+                                        return;
+                                    }
+                                };
+                                if let Err(e) = delete_exercise(&mut conn, id).await {
+                                    let _ = sender.send(ExercisesPageMsg::Error(e));
+                                } else {
+                                    let _ = conn.commit().await;
+                                    let _ = sender.send(ExercisesPageMsg::Deleted);
+                                }
+                            });
+                        }
+                    }
                 }
-            }
-
-            if self.pagination_state.has_next() {
-                if ui.button("Next").clicked() {
-                    self.pagination_state.go_forwards();
-                    self.trigger_list_refresh();
-                }
-            }
+            });
         });
     }
 

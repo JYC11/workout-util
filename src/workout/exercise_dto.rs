@@ -20,6 +20,10 @@ pub struct ExerciseLibraryReq {
     pub description: Option<String>,
 }
 
+pub trait ExerciseName {
+    fn full_name(&self) -> String;
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]
 pub struct ExerciseLibraryRes {
     pub id: u32,
@@ -34,6 +38,32 @@ pub struct ExerciseLibraryRes {
     pub grip: Option<Grip>,
     pub grip_width: Option<GripWidth>,
     pub description: Option<String>,
+}
+
+impl ExerciseName for ExerciseLibraryRes {
+    fn full_name(&self) -> String {
+        match self.upper_or_lower {
+            UpperOrLower::Upper => match self.compound_or_isolation {
+                CompoundOrIsolation::Compound => {
+                    let mut parts = Vec::new();
+                    if let Some(width) = self.grip_width {
+                        parts.push(width.to_string());
+                    }
+                    if let Some(grip) = self.grip {
+                        parts.push(grip.to_string());
+                    }
+                    if let Some(variation) = self.lever_variation {
+                        parts.push(variation.to_string());
+                    }
+
+                    parts.push(self.name.clone());
+                    parts.join(" ")
+                }
+                CompoundOrIsolation::Isolation => self.name.clone(),
+            },
+            UpperOrLower::Lower => self.name.clone(),
+        }
+    }
 }
 
 impl HasId for ExerciseLibraryRes {
@@ -97,6 +127,15 @@ pub struct StraightArmCompoundExercise {
     pub grip_width: GripWidth,
 }
 
+impl ExerciseName for StraightArmCompoundExercise {
+    fn full_name(&self) -> String {
+        format!(
+            "{} {} {} {}",
+            self.grip_width, self.grip, self.lever_variation, self.name
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BentArmCompoundExercise {
     pub id: u32,
@@ -108,12 +147,30 @@ pub struct BentArmCompoundExercise {
     pub grip_width: GripWidth,
 }
 
+impl ExerciseName for BentArmCompoundExercise {
+    fn full_name(&self) -> String {
+        if let Some(lever_variation) = self.lever_variation {
+            return format!(
+                "{} {} {} {}",
+                self.grip_width, self.grip, lever_variation, self.name
+            );
+        }
+        format!("{} {} {}", self.grip_width, self.grip, self.name)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UpperBodyIsolationExercise {
     pub id: u32,
     pub name: String,
     pub dynamic_or_static: DynamicOrStatic,
     pub straight_or_bent: StraightOrBentArm,
+}
+
+impl ExerciseName for UpperBodyIsolationExercise {
+    fn full_name(&self) -> String {
+        self.name.clone()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -124,11 +181,23 @@ pub struct LowerBodyCompoundExercise {
     pub squat_or_hinge: SquatOrHinge,
 }
 
+impl ExerciseName for LowerBodyCompoundExercise {
+    fn full_name(&self) -> String {
+        self.name.clone()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LowerBodyIsolationExercise {
     pub id: u32,
     pub name: String,
     pub dynamic_or_static: DynamicOrStatic,
+}
+
+impl ExerciseName for LowerBodyIsolationExercise {
+    fn full_name(&self) -> String {
+        self.name.clone()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

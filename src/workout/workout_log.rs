@@ -61,7 +61,7 @@ pub async fn delete_log_group(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Resu
 }
 
 // TODO need to join logs
-pub async fn get_one_log_group<'e, E: Executor<'e, Database=Sqlite>>(
+pub async fn get_one_log_group<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     id: u32,
 ) -> Result<WorkoutLogGroupEntity, String> {
@@ -85,16 +85,16 @@ pub async fn create_log(
             set_number, rep_number_or_seconds, weight, description
         ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
     )
-        .bind(req.workout_id)
-        .bind(req.workout_exercise_id)
-        .bind(req.workout_log_group_id)
-        .bind(req.set_number)
-        .bind(req.rep_number_or_seconds)
-        .bind(req.weight)
-        .bind(req.description)
-        .execute(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to create workout log: {}", e))?;
+    .bind(req.workout_id)
+    .bind(req.workout_exercise_id)
+    .bind(req.workout_log_group_id)
+    .bind(req.set_number)
+    .bind(req.rep_number_or_seconds)
+    .bind(req.weight)
+    .bind(req.description)
+    .execute(&mut **tx)
+    .await
+    .map_err(|e| format!("Failed to create workout log: {}", e))?;
 
     Ok(result.last_insert_rowid() as u32)
 }
@@ -114,7 +114,7 @@ pub async fn delete_log(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result<(),
 }
 
 // TODO need to join exercises and workout
-pub async fn get_one_log<'e, E: Executor<'e, Database=Sqlite>>(
+pub async fn get_one_log<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     id: u32,
 ) -> Result<WorkoutLogRes, String> {
@@ -137,7 +137,7 @@ pub async fn get_one_log<'e, E: Executor<'e, Database=Sqlite>>(
     })
 }
 
-pub async fn paginate_logs<'e, E: Executor<'e, Database=Sqlite>>(
+pub async fn paginate_logs<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     pagination_params: PaginationParams,
 ) -> Result<(), String> {
@@ -148,7 +148,7 @@ pub async fn paginate_logs<'e, E: Executor<'e, Database=Sqlite>>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::{init_db, IN_MEMORY_DB_URL};
+    use crate::db::{IN_MEMORY_DB_URL, init_db};
     use crate::workout::enums::{
         Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower,
     };
@@ -165,13 +165,13 @@ mod tests {
                 name, dynamic_or_static, upper_or_lower, compound_or_isolation
             ) VALUES (?, ?, ?, ?)"#,
         )
-            .bind("Dummy Ex")
-            .bind(DynamicOrStatic::Dynamic)
-            .bind(UpperOrLower::Upper)
-            .bind(CompoundOrIsolation::Compound)
-            .execute(&mut **tx)
-            .await
-            .unwrap();
+        .bind("Dummy Ex")
+        .bind(DynamicOrStatic::Dynamic)
+        .bind(UpperOrLower::Upper)
+        .bind(CompoundOrIsolation::Compound)
+        .execute(&mut **tx)
+        .await
+        .unwrap();
         1 // first auto-increment ID
     }
 
@@ -211,22 +211,22 @@ mod tests {
                 rest_period_seconds, tempo, emom, equipments, bands, description
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
-            .bind(chrono::Utc::now())
-            .bind(workout_id)
-            .bind(exercise_id)
-            .bind("A1")
-            .bind(3u8)
-            .bind(10u8)
-            .bind(50u8)
-            .bind(60u8)
-            .bind("2010")
-            .bind(false)
-            .bind(sqlx::types::Json(vec![Equipment::Barbell]))
-            .bind(sqlx::types::Json(vec![Band::Yellow]))
-            .bind(Option::<String>::None)
-            .execute(&mut **tx)
-            .await
-            .unwrap();
+        .bind(chrono::Utc::now())
+        .bind(workout_id)
+        .bind(exercise_id)
+        .bind("A1")
+        .bind(3u8)
+        .bind(10u8)
+        .bind(50u8)
+        .bind(60u8)
+        .bind("2010")
+        .bind(false)
+        .bind(sqlx::types::Json(vec![Equipment::Barbell]))
+        .bind(sqlx::types::Json(vec![Band::Yellow]))
+        .bind(Option::<String>::None)
+        .execute(&mut **tx)
+        .await
+        .unwrap();
 
         let workout_exercise_id = 1u32; // first one
 
