@@ -27,7 +27,6 @@ pub struct ExercisesPage {
     // Form State
     form_data: ExerciseLibraryReq,
     // Search/Filter State
-    filter_name: String,
     pagination_filters: ExerciseLibraryFilterReq,
     // Pagination State
     pagination_state: PaginationState,
@@ -55,7 +54,6 @@ impl ExercisesPage {
             list_items: Vec::new(),
             current_detail: None,
             form_data: exercise_library_default_req(),
-            filter_name: String::new(),
             pagination_filters: ExerciseLibraryFilterReq::default(),
             pagination_state: PaginationState::default(),
             receiver,
@@ -87,7 +85,8 @@ impl ExercisesPage {
                     self.current_detail = Some(valid_exercise);
                 }
                 ExercisesPageMsg::Saved => {
-                    self.common_ui_state.show_success("Exercise saved successfully");
+                    self.common_ui_state
+                        .show_success("Exercise saved successfully");
                     if matches!(self.state, ExercisesPageState::CreateNew) {
                         self.state = ExercisesPageState::DetailsClosed;
                         self.trigger_list_refresh();
@@ -120,12 +119,7 @@ impl ExercisesPage {
 
         let sender = self.sender.clone();
         let pool = self.pool.clone();
-        let mut filter = self.pagination_filters.clone();
-        filter.name = if self.filter_name.is_empty() {
-            None
-        } else {
-            Some(self.filter_name.clone())
-        };
+        let filter = self.pagination_filters.clone();
         let params = self.pagination_state.to_pagination_params();
 
         let ctx = ctx.clone();
@@ -676,9 +670,16 @@ impl ExercisesPage {
                 });
                 ui.separator();
 
+                let mut name = if let Some(name) = &self.pagination_filters.name {
+                    name.clone()
+                } else {
+                    "".to_string()
+                };
+
                 ui.horizontal(|ui| {
                     ui.label("Search:");
-                    if ui.text_edit_singleline(&mut self.filter_name).changed() {
+                    if ui.text_edit_singleline(&mut name).changed() {
+                        self.pagination_filters.name = Some(name.clone());
                         self.pagination_state.reset_pagination();
                         self.trigger_list_refresh();
                     }

@@ -1,20 +1,20 @@
-use std::sync::mpsc::{channel, Receiver, Sender};
-use eframe::egui;
-use sqlx::{Pool, Sqlite};
 use crate::app::utils::CommonUiState;
 use crate::db::pagination_support::PaginationState;
 use crate::workout::exercise_dto::ExerciseLibraryFilterReq;
+use crate::workout::workout_dto::WorkoutsFilterReq;
+use eframe::egui;
+use sqlx::{Pool, Sqlite};
+use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct WorkoutsPage {
     pool: Pool<Sqlite>,
     state: WorkoutsPageState,
     // Exercise Search/Filter State
-    exercise_filter_name: String,
-    pagination_filters: ExerciseLibraryFilterReq,
+    exercise_filters: ExerciseLibraryFilterReq,
     // Workout Search/Filter State
-    workout_filter_name: String,
+    workout_filters: WorkoutsFilterReq,
     // Workout Pagination State
-    pagination_state: PaginationState,
+    workout_pagination_state: PaginationState,
     // Async Communication
     receiver: Receiver<WorkoutsPageMsg>,
     sender: Sender<WorkoutsPageMsg>,
@@ -33,13 +33,12 @@ pub enum WorkoutsPageMsg {
 impl WorkoutsPage {
     pub fn default(pool: Pool<Sqlite>) -> Self {
         let (sender, receiver) = channel();
-        Self { 
+        Self {
             pool,
             state: WorkoutsPageState::DetailsClosed,
-            exercise_filter_name: String::new(),
-            pagination_filters: ExerciseLibraryFilterReq::default(),
-            workout_filter_name: String::new(),
-            pagination_state: PaginationState::default(),
+            exercise_filters: ExerciseLibraryFilterReq::default(),
+            workout_filters: WorkoutsFilterReq::default(),
+            workout_pagination_state: PaginationState::default(),
             receiver,
             sender,
             common_ui_state: CommonUiState::default(),
@@ -83,7 +82,7 @@ pub enum WorkoutsPageState {
 
 impl WorkoutsPage {
     fn handle_async_messages(&mut self) {}
-    
+
     fn render_exercise_filters(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         // the filters for the exercises list on the top of the workout builder form
     }

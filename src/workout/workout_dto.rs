@@ -46,3 +46,20 @@ pub struct WorkoutRes {
     pub description: Option<String>,
     pub active: bool,
 }
+
+#[derive(Clone)]
+pub struct WorkoutsFilterReq {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub active: Option<bool>,
+}
+
+impl Default for WorkoutsFilterReq {
+    fn default() -> Self {
+        Self {
+            name: None,
+            description: None,
+            active: None,
+        }
+    }
+}

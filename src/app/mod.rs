@@ -1,15 +1,15 @@
 mod exercises_page;
 mod start_workout_page;
 mod utils;
-mod workouts_page;
 mod workout_logs_page;
+mod workouts_page;
 
 use crate::app::exercises_page::ExercisesPage;
 use crate::app::start_workout_page::StartWorkoutPage;
+use crate::app::workout_logs_page::WorkoutLogsPage;
 use crate::app::workouts_page::WorkoutsPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use crate::app::workout_logs_page::WorkoutLogsPage;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MainPageState {

@@ -43,11 +43,11 @@ impl CommonUiState {
     pub fn not_initialized(&mut self) {
         self.initialized = false
     }
-    
+
     pub fn show_error(&mut self, msg: &str) {
         self.error_message = Some((msg.to_string(), Instant::now()));
     }
-    
+
     pub fn show_success(&mut self, msg: &str) {
         self.success_message = Some((msg.to_string(), Instant::now()));
     }

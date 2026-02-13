@@ -1,6 +1,8 @@
 use crate::db::pagination_support::PaginationParams;
 use crate::workout::enums::{Band, Equipment};
-use crate::workout::workout_dto::{WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes};
+use crate::workout::workout_dto::{
+    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
+};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::types::Json;
@@ -104,7 +106,6 @@ pub async fn delete_workout(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result
     Ok(())
 }
 
-// TODO needs to join workout exercises and exercise library
 pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     id: u32,
@@ -126,6 +127,7 @@ pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
 
 pub fn paginate_workouts<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
+    pagination_filters: WorkoutsFilterReq,
     pagination_params: PaginationParams,
 ) -> Result<(), String> {
     // TODO
@@ -227,6 +229,7 @@ pub async fn delete_workout_exercise(
 }
 
 // TODO join to exercise library to get exercise name
+// TODO change to get all by workout_id
 pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     id: u32,
