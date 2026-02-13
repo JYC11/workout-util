@@ -13,7 +13,7 @@ pub struct WorkoutExerciseEntity {
     pub created_at: DateTime<Utc>, // should be some kinda DateTime
     pub workout_id: u32,           // fk to Workout
     pub exercise_id: u32,          // fk to ExerciseLibraryEntry
-    pub code: String,              // A1, A2, B1, B2 ...
+    pub code: String,              // A1, A2, B1, B2 ... input by user
     pub sets_target: u8,
     pub reps_or_seconds_target: u8,
     pub working_weight: u16,

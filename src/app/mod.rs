@@ -2,22 +2,22 @@ mod exercises_page;
 mod start_workout_page;
 mod utils;
 mod workouts_page;
-mod workouts_plans_page;
+mod workout_logs_page;
 
 use crate::app::exercises_page::ExercisesPage;
 use crate::app::start_workout_page::StartWorkoutPage;
 use crate::app::workouts_page::WorkoutsPage;
-use crate::app::workouts_plans_page::WorkoutPlansPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
+use crate::app::workout_logs_page::WorkoutLogsPage;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MainPageState {
     Home,
     Exercises,
     Workouts,
-    WorkoutPlans,
     StartWorkout,
+    WorkoutLogs,
 }
 
 pub struct WorkoutUtil {
@@ -25,8 +25,8 @@ pub struct WorkoutUtil {
     current_page: MainPageState,
     exercises_page: ExercisesPage,
     workouts_page: WorkoutsPage,
-    workout_plans_page: WorkoutPlansPage,
     start_workout_page: StartWorkoutPage,
+    workout_logs_page: WorkoutLogsPage,
 }
 
 impl WorkoutUtil {
@@ -36,8 +36,8 @@ impl WorkoutUtil {
             current_page: MainPageState::Home,
             exercises_page: ExercisesPage::default(pool.clone()),
             workouts_page: WorkoutsPage::default(pool.clone()),
-            workout_plans_page: WorkoutPlansPage::default(pool.clone()),
             start_workout_page: StartWorkoutPage::default(pool.clone()),
+            workout_logs_page: WorkoutLogsPage::default(pool),
         }
     }
 
@@ -51,7 +51,6 @@ impl WorkoutUtil {
                 (MainPageState::Home, "Home"),
                 (MainPageState::Exercises, "Exercises"),
                 (MainPageState::Workouts, "Workouts"),
-                (MainPageState::WorkoutPlans, "Workout Plans"),
                 (MainPageState::StartWorkout, "Start Workout"),
             ] {
                 let is_active = self.current_page == page;
@@ -80,8 +79,8 @@ impl WorkoutUtil {
             MainPageState::Home => self.render_home(ctx, ui),
             MainPageState::Exercises => self.exercises_page.render_page(ctx, ui),
             MainPageState::Workouts => self.workouts_page.render_page(ctx, ui),
-            MainPageState::WorkoutPlans => self.workout_plans_page.render_page(ctx, ui),
             MainPageState::StartWorkout => self.start_workout_page.render_page(ctx, ui),
+            MainPageState::WorkoutLogs => self.workout_logs_page.render_page(ctx, ui),
         }
     }
 

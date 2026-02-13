@@ -1,17 +1,119 @@
+use std::sync::mpsc::{channel, Receiver, Sender};
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
+use crate::app::utils::CommonUiState;
+use crate::db::pagination_support::PaginationState;
+use crate::workout::exercise_dto::ExerciseLibraryFilterReq;
 
 pub struct WorkoutsPage {
-    pub pool: Pool<Sqlite>,
+    pool: Pool<Sqlite>,
+    state: WorkoutsPageState,
+    // Exercise Search/Filter State
+    exercise_filter_name: String,
+    pagination_filters: ExerciseLibraryFilterReq,
+    // Workout Search/Filter State
+    workout_filter_name: String,
+    // Workout Pagination State
+    pagination_state: PaginationState,
+    // Async Communication
+    receiver: Receiver<WorkoutsPageMsg>,
+    sender: Sender<WorkoutsPageMsg>,
+    // UI Status
+    common_ui_state: CommonUiState,
+}
+
+pub enum WorkoutsPageMsg {
+    ListLoaded,
+    DetailLoaded,
+    Saved,
+    Deleted,
+    Error(String),
 }
 
 impl WorkoutsPage {
     pub fn default(pool: Pool<Sqlite>) -> Self {
-        Self { pool }
+        let (sender, receiver) = channel();
+        Self { 
+            pool,
+            state: WorkoutsPageState::DetailsClosed,
+            exercise_filter_name: String::new(),
+            pagination_filters: ExerciseLibraryFilterReq::default(),
+            workout_filter_name: String::new(),
+            pagination_state: PaginationState::default(),
+            receiver,
+            sender,
+            common_ui_state: CommonUiState::default(),
+        }
     }
 }
 
+pub enum WorkoutsPageState {
+    DetailsClosed,
+    DetailsOpenView,
+    DetailsEditView,
+    CreateNew,
+}
+
+/* aiming for something like this for the form:
+[ Create Workout ]
+┌───────────────────────────────────────────────┐
+│  🔍 Search Exercises (with filter buttons)    │
+├───────────────────────────────────────────────┤
+│  [BENCH PRESS]  [+]  [PULL-UP]  [+]  [SQUAT] [+]  │
+│  [ROWS]         [+]  [PUSH-UP]  [+]  ...        │
+│  (Scrollable exercise library - 3-4 items visible)│
+├───────────────────────────────────────────────┤
+│  YOUR WORKOUT PLAN                            │
+├───────────────────────────────────────────────┤
+│  A1. BENCH PRESS                             │
+│  • 4×10 @ 80kg  [✏️]  [×]                     │
+│  (Tap pencil to edit sets/reps/weight)         │
+├───────────────────────────────────────────────┤
+│  A2. PULL-UP                                 │
+│  • 3×8 (BW)       [✏️]  [×]                   │
+├───────────────────────────────────────────────┤
+│  A3. SQUAT                                    │
+│  • 5×5 @ 100kg    [✏️]  [×]                   │
+├───────────────────────────────────────────────┤
+│  [ + ADD EXERCISE ]                           │
+├───────────────────────────────────────────────┤
+│  [ START THIS WORKOUT ]                       │
+└───────────────────────────────────────────────┘
+ */
+
 impl WorkoutsPage {
+    fn handle_async_messages(&mut self) {}
+    
+    fn render_exercise_filters(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        // the filters for the exercises list on the top of the workout builder form
+    }
+
+    fn render_exercises_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        // the small list of exercises on top of the main workout builder form
+    }
+
+    fn render_workout_exercise_form(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        // for editing the exercise code, sets, reps, weight, etc. of an exercise in a workout
+    }
+
+    fn render_workout_builder_form(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        // the main form for building a workout, with the exercise list and the exercise forms
+        // should be able to add exercises from the list, remove exercises.
+    }
+
+    fn render_workout_details_open_view(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        // the details view for a workout, showing the exercises and their details
+    }
+
+    fn render_workout_details_edit_view(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        // the details view for a workout, showing the exercises and their details at editable state
+    }
+
+    fn render_workouts_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        // render the list of workouts, with a button to create a new workout,
+        // a button to edit the selected workout and a button to delete the workout
+    }
+
     pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         todo!("render workouts page");
     }

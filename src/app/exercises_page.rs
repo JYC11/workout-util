@@ -87,7 +87,7 @@ impl ExercisesPage {
                     self.current_detail = Some(valid_exercise);
                 }
                 ExercisesPageMsg::Saved => {
-                    self.show_success("Exercise saved successfully");
+                    self.common_ui_state.show_success("Exercise saved successfully");
                     if matches!(self.state, ExercisesPageState::CreateNew) {
                         self.state = ExercisesPageState::DetailsClosed;
                         self.trigger_list_refresh();
@@ -97,23 +97,15 @@ impl ExercisesPage {
                     }
                 }
                 ExercisesPageMsg::Deleted => {
-                    self.show_success("Exercise deleted");
+                    self.common_ui_state.show_success("Exercise deleted");
                     self.state = ExercisesPageState::DetailsClosed;
                     self.trigger_list_refresh();
                 }
                 ExercisesPageMsg::Error(e) => {
-                    self.show_error(&e);
+                    self.common_ui_state.show_error(&e);
                 }
             }
         }
-    }
-
-    fn show_error(&mut self, msg: &str) {
-        self.common_ui_state.error_message = Some((msg.to_string(), Instant::now()));
-    }
-
-    fn show_success(&mut self, msg: &str) {
-        self.common_ui_state.success_message = Some((msg.to_string(), Instant::now()));
     }
 
     fn trigger_list_refresh(&mut self) {
