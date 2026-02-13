@@ -148,16 +148,16 @@ impl ExercisesPage {
 
     fn fetch_detail(&mut self, pool: &Pool<Sqlite>, id: u32) {
         self.common_ui_state.set_as_loading();
-        let tx = self.sender.clone();
+        let sender = self.sender.clone();
         let pool = pool.clone();
 
         tokio::spawn(async move {
             match get_one_exercise(&pool, id).await {
                 Ok(e) => {
-                    let _ = tx.send(ExercisesPageMsg::DetailLoaded(e));
+                    let _ = sender.send(ExercisesPageMsg::DetailLoaded(e));
                 }
                 Err(e) => {
-                    let _ = tx.send(ExercisesPageMsg::Error(e));
+                    let _ = sender.send(ExercisesPageMsg::Error(e));
                 }
             }
         });
@@ -709,21 +709,21 @@ impl ExercisesPage {
                 }
                 ListAction::Delete(id) => {
                     self.common_ui_state.set_as_loading();
-                    let tx = self.sender.clone();
+                    let sender = self.sender.clone();
                     let pool = pool.clone();
                     tokio::spawn(async move {
                         let mut conn = match pool.begin().await {
                             Ok(c) => c,
                             Err(e) => {
-                                let _ = tx.send(ExercisesPageMsg::Error(e.to_string()));
+                                let _ = sender.send(ExercisesPageMsg::Error(e.to_string()));
                                 return;
                             }
                         };
                         if let Err(e) = delete_exercise(&mut conn, id).await {
-                            let _ = tx.send(ExercisesPageMsg::Error(e));
+                            let _ = sender.send(ExercisesPageMsg::Error(e));
                         } else {
                             let _ = conn.commit().await;
-                            let _ = tx.send(ExercisesPageMsg::Deleted);
+                            let _ = sender.send(ExercisesPageMsg::Deleted);
                         }
                     });
                 }
