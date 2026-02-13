@@ -63,13 +63,13 @@ pub async fn create_workout_plan(
         VALUES (?, ?, ?, ?)
         "#,
     )
-    .bind(created_at)
-    .bind(&req.name)
-    .bind(&req.description)
-    .bind(req.currently_using)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to create workout plan: {}", e))?;
+        .bind(created_at)
+        .bind(&req.name)
+        .bind(&req.description)
+        .bind(req.currently_using)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create workout plan: {}", e))?;
 
     let id = result.last_insert_rowid() as u32;
     Ok(id)
@@ -87,13 +87,13 @@ pub async fn update_workout_plan(
         WHERE id = ?
         "#,
     )
-    .bind(&req.name)
-    .bind(&req.description)
-    .bind(req.currently_using)
-    .bind(id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to update workout plan: {}", e))?;
+        .bind(&req.name)
+        .bind(&req.description)
+        .bind(req.currently_using)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update workout plan: {}", e))?;
 
     if result.rows_affected() == 0 {
         return Err("Workout plan not found".to_string());
@@ -118,7 +118,7 @@ pub async fn delete_workout_plan(tx: &mut Transaction<'_, Sqlite>, id: u32) -> R
 }
 
 // TODO needs to join workouts
-pub async fn get_one_workout_plan<'e, E: Executor<'e, Database = Sqlite>>(
+pub async fn get_one_workout_plan<'e, E: Executor<'e, Database=Sqlite>>(
     executor: E,
     id: u32,
 ) -> Result<WorkoutPlanRes, String> {
@@ -137,7 +137,7 @@ pub async fn get_one_workout_plan<'e, E: Executor<'e, Database = Sqlite>>(
     })
 }
 
-pub fn paginate_workout_plans<'e, E: Executor<'e, Database = Sqlite>>(
+pub fn paginate_workout_plans<'e, E: Executor<'e, Database=Sqlite>>(
     executor: E,
     pagination_params: PaginationParams,
 ) -> Result<(), String> {
@@ -159,13 +159,13 @@ pub async fn create_workout(
         VALUES (?, ?, ?, ?)
         "#,
     )
-    .bind(created_at)
-    .bind(req.workout_plan_id)
-    .bind(&req.name)
-    .bind(&req.description)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to create workout: {}", e))?;
+        .bind(created_at)
+        .bind(req.workout_plan_id)
+        .bind(&req.name)
+        .bind(&req.description)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create workout: {}", e))?;
 
     let id = result.last_insert_rowid() as u32;
     Ok(id)
@@ -183,13 +183,13 @@ pub async fn update_workout(
         WHERE id = ?
         "#,
     )
-    .bind(req.workout_plan_id)
-    .bind(&req.name)
-    .bind(&req.description)
-    .bind(id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to update workout: {}", e))?;
+        .bind(req.workout_plan_id)
+        .bind(&req.name)
+        .bind(&req.description)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update workout: {}", e))?;
 
     if result.rows_affected() == 0 {
         return Err("Workout not found".to_string());
@@ -213,7 +213,7 @@ pub async fn delete_workout(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result
 }
 
 // TODO needs to join workout exercises and exercise library
-pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
+pub async fn get_one_workout<'e, E: Executor<'e, Database=Sqlite>>(
     executor: E,
     id: u32,
 ) -> Result<WorkoutRes, String> {
@@ -232,7 +232,7 @@ pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
     })
 }
 
-pub fn paginate_workouts<'e, E: Executor<'e, Database = Sqlite>>(
+pub fn paginate_workouts<'e, E: Executor<'e, Database=Sqlite>>(
     executor: E,
     pagination_params: PaginationParams,
 ) -> Result<(), String> {
@@ -257,22 +257,22 @@ pub async fn create_workout_exercise(
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
-    .bind(created_at)
-    .bind(req.workout_id)
-    .bind(req.exercise_id)
-    .bind(&req.code)
-    .bind(req.sets_target)
-    .bind(req.reps_or_seconds_target)
-    .bind(req.working_weight)
-    .bind(req.rest_period_seconds)
-    .bind(&req.tempo)
-    .bind(&req.emom)
-    .bind(Json(req.equipments))
-    .bind(Json(req.bands))
-    .bind(&req.description)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to create workout exercise: {}", e))?;
+        .bind(created_at)
+        .bind(req.workout_id)
+        .bind(req.exercise_id)
+        .bind(&req.code)
+        .bind(req.sets_target)
+        .bind(req.reps_or_seconds_target)
+        .bind(req.working_weight)
+        .bind(req.rest_period_seconds)
+        .bind(&req.tempo)
+        .bind(&req.emom)
+        .bind(Json(req.equipments))
+        .bind(Json(req.bands))
+        .bind(&req.description)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create workout exercise: {}", e))?;
 
     let id = result.last_insert_rowid() as u32;
     Ok(id)
@@ -293,22 +293,22 @@ pub async fn update_workout_exercise(
         WHERE id = ?
         "#,
     )
-    .bind(req.workout_id)
-    .bind(req.exercise_id)
-    .bind(&req.code)
-    .bind(req.sets_target)
-    .bind(req.reps_or_seconds_target)
-    .bind(req.working_weight)
-    .bind(req.rest_period_seconds)
-    .bind(&req.tempo)
-    .bind(req.emom)
-    .bind(Json(req.equipments))
-    .bind(Json(req.bands))
-    .bind(&req.description)
-    .bind(id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to update workout exercise: {}", e))?;
+        .bind(req.workout_id)
+        .bind(req.exercise_id)
+        .bind(&req.code)
+        .bind(req.sets_target)
+        .bind(req.reps_or_seconds_target)
+        .bind(req.working_weight)
+        .bind(req.rest_period_seconds)
+        .bind(&req.tempo)
+        .bind(req.emom)
+        .bind(Json(req.equipments))
+        .bind(Json(req.bands))
+        .bind(&req.description)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update workout exercise: {}", e))?;
 
     if result.rows_affected() == 0 {
         return Err("Workout exercise not found".to_string());
@@ -335,7 +335,7 @@ pub async fn delete_workout_exercise(
 }
 
 // TODO join to exercise library to get exercise name
-pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
+pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database=Sqlite>>(
     executor: E,
     id: u32,
 ) -> Result<WorkoutExerciseRes, String> {
@@ -362,7 +362,7 @@ pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
     })
 }
 
-pub fn paginate_workout_exercises<'e, E: Executor<'e, Database = Sqlite>>(
+pub fn paginate_workout_exercises<'e, E: Executor<'e, Database=Sqlite>>(
     executor: E,
     pagination_params: PaginationParams,
 ) -> Result<(), String> {
@@ -373,7 +373,7 @@ pub fn paginate_workout_exercises<'e, E: Executor<'e, Database = Sqlite>>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::db::{init_db, IN_MEMORY_DB_URL};
     use crate::workout::enums::{Band, Equipment};
     use sqlx::SqlitePool;
 
@@ -530,13 +530,13 @@ mod tests {
                 name, dynamic_or_static, upper_or_lower, compound_or_isolation
             ) VALUES (?, ?, ?, ?)"#,
         )
-        .bind("Dummy Pushup")
-        .bind(crate::workout::enums::DynamicOrStatic::Dynamic)
-        .bind(crate::workout::enums::UpperOrLower::Upper)
-        .bind(crate::workout::enums::CompoundOrIsolation::Compound)
-        .execute(&mut *tx)
-        .await
-        .unwrap();
+            .bind("Dummy Pushup")
+            .bind(crate::workout::enums::DynamicOrStatic::Dynamic)
+            .bind(crate::workout::enums::UpperOrLower::Upper)
+            .bind(crate::workout::enums::CompoundOrIsolation::Compound)
+            .execute(&mut *tx)
+            .await
+            .unwrap();
         let exercise_id = 1; // first autoincrement ID
 
         // Create
@@ -544,8 +544,8 @@ mod tests {
             &mut tx,
             mock_workout_exercise_req(workout_id, exercise_id, "A1"),
         )
-        .await
-        .expect("Failed to create workout exercise");
+            .await
+            .expect("Failed to create workout exercise");
 
         // Get
         let ex = get_one_workout_exercise(&mut *tx, ex_id)
@@ -656,13 +656,13 @@ mod tests {
         let log_group_id: i64 = sqlx::query(
             "INSERT INTO workout_log_groups (created_at, date, notes) VALUES (?, ?, ?)",
         )
-        .bind(Utc::now())
-        .bind(&now)
-        .bind("Test session")
-        .execute(&mut *tx)
-        .await
-        .unwrap()
-        .last_insert_rowid();
+            .bind(Utc::now())
+            .bind(&now)
+            .bind("Test session")
+            .execute(&mut *tx)
+            .await
+            .unwrap()
+            .last_insert_rowid();
 
         // Create a log entry referencing the workout exercise
         sqlx::query(
@@ -671,16 +671,16 @@ mod tests {
                 set_number, rep_number_or_seconds, weight, description
             ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
         )
-        .bind(workout_id)
-        .bind(ex_id)
-        .bind(log_group_id as u32)
-        .bind(1u8)
-        .bind(8u8)
-        .bind(100u32)
-        .bind("Completed")
-        .execute(&mut *tx)
-        .await
-        .unwrap();
+            .bind(workout_id)
+            .bind(ex_id)
+            .bind(log_group_id as u32)
+            .bind(1u8)
+            .bind(8u8)
+            .bind(100u32)
+            .bind("Completed")
+            .execute(&mut *tx)
+            .await
+            .unwrap();
 
         // Now try to delete the workout exercise → should fail
         let result = delete_workout_exercise(&mut tx, ex_id).await;

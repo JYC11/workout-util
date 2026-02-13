@@ -1,8 +1,7 @@
 pub mod pagination_support;
 
 use sqlx::migrate::MigrateDatabase;
-use sqlx::{Pool, Sqlite, SqlitePool, Transaction};
-use std::sync::mpsc::Sender;
+use sqlx::{Pool, Sqlite, SqlitePool};
 
 pub const DEFAULT_DB_URL: &str = "sqlite://data.db";
 pub const IN_MEMORY_DB_URL: &str = "sqlite::memory:";

@@ -1,21 +1,21 @@
 use crate::app::utils;
-use crate::app::utils::{CommonUiState, filter_combo};
+use crate::app::utils::{filter_combo, CommonUiState};
 use crate::db::pagination_support::{PaginationRes, PaginationState};
 use crate::workout::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
 use crate::workout::exercise::{
-    ExerciseLibraryEntity, create_exercise, delete_exercise, get_one_exercise, paginate_exercises,
-    update_exercise,
+    create_exercise, delete_exercise, get_one_exercise, paginate_exercises, update_exercise,
+    ExerciseLibraryEntity,
 };
 use crate::workout::exercise_dto::{
-    ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise,
     exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name,
+    ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise,
 };
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::{Duration, Instant};
 
 pub struct ExercisesPage {
