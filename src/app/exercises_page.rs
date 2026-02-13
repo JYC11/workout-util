@@ -9,13 +9,17 @@ use crate::workout::exercise::{
     ExerciseLibraryEntity, create_exercise, delete_exercise, get_one_exercise, paginate_exercises,
     update_exercise,
 };
-use crate::workout::exercise_dto::{ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise, exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name, ExerciseName};
+use crate::workout::exercise_dto::{
+    ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ExerciseName, ValidExercise,
+    exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name,
+};
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::{Duration, Instant};
 
 pub struct ExercisesPage {
+    pool: Pool<Sqlite>,
     state: ExercisesPageState,
     // Data
     list_items: Vec<ExerciseLibraryRes>,
@@ -42,10 +46,11 @@ pub enum ExercisesPageMsg {
     Error(String),
 }
 
-impl Default for ExercisesPage {
-    fn default() -> Self {
+impl ExercisesPage {
+    pub fn default(pool: Pool<Sqlite>) -> Self {
         let (sender, receiver) = channel();
         Self {
+            pool,
             state: ExercisesPageState::DetailsClosed,
             list_items: Vec::new(),
             current_detail: None,
@@ -115,14 +120,14 @@ impl ExercisesPage {
         self.common_ui_state.not_initialized();
     }
 
-    fn fetch_list(&mut self, pool: &Pool<Sqlite>) {
+    fn fetch_list(&mut self, ctx: &egui::Context) {
         if self.common_ui_state.loading {
             return;
         }
         self.common_ui_state.set_as_loading();
 
         let sender = self.sender.clone();
-        let pool = pool.clone();
+        let pool = self.pool.clone();
         let mut filter = self.pagination_filters.clone();
         filter.name = if self.filter_name.is_empty() {
             None
@@ -130,6 +135,8 @@ impl ExercisesPage {
             Some(self.filter_name.clone())
         };
         let params = self.pagination_state.to_pagination_params();
+
+        let ctx = ctx.clone();
 
         tokio::spawn(async move {
             match paginate_exercises(&pool, Some(filter), params).await {
@@ -140,13 +147,15 @@ impl ExercisesPage {
                     let _ = sender.send(ExercisesPageMsg::Error(e));
                 }
             }
+            ctx.request_repaint();
         });
     }
 
-    fn fetch_detail(&mut self, pool: &Pool<Sqlite>, id: u32) {
+    fn fetch_detail(&mut self, ctx: &egui::Context, id: u32) {
         self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
-        let pool = pool.clone();
+        let pool = self.pool.clone();
+        let ctx = ctx.clone();
 
         tokio::spawn(async move {
             match get_one_exercise(&pool, id).await {
@@ -157,15 +166,17 @@ impl ExercisesPage {
                     let _ = sender.send(ExercisesPageMsg::Error(e));
                 }
             }
+            ctx.request_repaint();
         });
     }
 
-    fn save_exercise(&mut self, pool: &Pool<Sqlite>) {
+    fn save_exercise(&mut self, ctx: &egui::Context) {
         self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
-        let pool = pool.clone();
+        let pool = self.pool.clone();
         let req = self.form_data.clone();
         let is_edit = matches!(self.state, ExercisesPageState::DetailsEditView);
+        let ctx = ctx.clone();
 
         let id_opt = self.current_detail.as_ref().map(|d| get_exercise_id(d));
 
@@ -213,10 +224,11 @@ impl ExercisesPage {
                     let _ = sender.send(ExercisesPageMsg::Error(e));
                 }
             }
+            ctx.request_repaint();
         });
     }
 
-    fn delete_current(&mut self, pool: &Pool<Sqlite>) {
+    fn delete_current(&mut self, ctx: &egui::Context) {
         let id = if let Some(d) = &self.current_detail {
             get_exercise_id(d)
         } else {
@@ -224,7 +236,8 @@ impl ExercisesPage {
         };
         self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
-        let pool = pool.clone();
+        let pool = self.pool.clone();
+        let ctx = ctx.clone();
 
         tokio::spawn(async move {
             let mut conn = match pool.begin().await {
@@ -248,13 +261,13 @@ impl ExercisesPage {
                     let _ = sender.send(ExercisesPageMsg::Error(e));
                 }
             }
+            ctx.request_repaint();
         });
     }
 
     fn render_details_open_view(&mut self, ui: &mut egui::Ui) {
         ui.heading("Exercise Details");
         ui.separator();
-
         if let Some(detail) = &self.current_detail {
             egui::Grid::new("details_grid")
                 .striped(true)
@@ -492,7 +505,7 @@ impl ExercisesPage {
         req.description = if desc.is_empty() { None } else { Some(desc) };
     }
 
-    fn render_details_edit_view(&mut self, ui: &mut egui::Ui, pool: &mut Pool<Sqlite>) {
+    fn render_details_edit_view(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.heading("Edit Exercise");
         ui.separator();
 
@@ -506,15 +519,15 @@ impl ExercisesPage {
                 self.state = ExercisesPageState::DetailsClosed;
             }
             if ui.button("Save").clicked() {
-                self.save_exercise(pool);
+                self.save_exercise(ctx);
             }
             if ui.button("Delete").clicked() {
-                self.delete_current(pool);
+                self.delete_current(ctx);
             }
         });
     }
 
-    fn render_create(&mut self, ui: &mut egui::Ui, pool: &mut Pool<Sqlite>) {
+    fn render_create(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.heading("Create New Exercise");
         ui.separator();
 
@@ -528,7 +541,7 @@ impl ExercisesPage {
                 self.state = ExercisesPageState::DetailsClosed;
             }
             if ui.button("Save").clicked() {
-                self.save_exercise(pool);
+                self.save_exercise(ctx);
             }
         });
     }
@@ -630,7 +643,7 @@ impl ExercisesPage {
         }
     }
 
-    fn render_list(&mut self, ui: &mut egui::Ui, pool: &mut Pool<Sqlite>) {
+    fn render_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
             ui.horizontal(|ui| {
                 ui.label("Limit:");
@@ -726,17 +739,17 @@ impl ExercisesPage {
                 if let Some(act) = action {
                     match act {
                         ListAction::Details(id) => {
-                            self.fetch_detail(pool, id);
+                            self.fetch_detail(ctx, id);
                             self.state = ExercisesPageState::DetailsOpenView;
                         }
                         ListAction::Edit(id) => {
-                            self.fetch_detail(pool, id);
+                            self.fetch_detail(ctx, id);
                             self.state = ExercisesPageState::DetailsEditView;
                         }
                         ListAction::Delete(id) => {
                             self.common_ui_state.set_as_loading();
                             let sender = self.sender.clone();
-                            let pool = pool.clone();
+                            let pool = self.pool.clone();
                             tokio::spawn(async move {
                                 let mut conn = match pool.begin().await {
                                     Ok(c) => c,
@@ -759,7 +772,7 @@ impl ExercisesPage {
         });
     }
 
-    pub fn render_page(&mut self, pool: &mut Pool<Sqlite>, ui: &mut egui::Ui) {
+    pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         self.handle_async_messages();
 
         // Show Toasts
@@ -781,15 +794,15 @@ impl ExercisesPage {
         if !self.common_ui_state.initialized
             && matches!(self.state, ExercisesPageState::DetailsClosed)
         {
-            self.fetch_list(pool);
+            self.fetch_list(ctx);
             self.common_ui_state.initialize();
         }
 
         match self.state {
-            ExercisesPageState::DetailsClosed => self.render_list(ui, pool),
+            ExercisesPageState::DetailsClosed => self.render_list(ctx, ui),
             ExercisesPageState::DetailsOpenView => self.render_details_open_view(ui),
-            ExercisesPageState::DetailsEditView => self.render_details_edit_view(ui, pool),
-            ExercisesPageState::CreateNew => self.render_create(ui, pool),
+            ExercisesPageState::DetailsEditView => self.render_details_edit_view(ctx, ui),
+            ExercisesPageState::CreateNew => self.render_create(ctx, ui),
         }
     }
 }

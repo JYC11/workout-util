@@ -32,12 +32,12 @@ pub struct WorkoutUtil {
 impl WorkoutUtil {
     pub fn new(_cc: &eframe::CreationContext<'_>, pool: Pool<Sqlite>) -> Self {
         Self {
-            pool,
+            pool: pool.clone(),
             current_page: MainPageState::Home,
-            exercises_page: ExercisesPage::default(),
-            workouts_page: WorkoutsPage::default(),
-            workout_plans_page: WorkoutPlansPage::default(),
-            start_workout_page: StartWorkoutPage::default(),
+            exercises_page: ExercisesPage::default(pool.clone()),
+            workouts_page: WorkoutsPage::default(pool.clone()),
+            workout_plans_page: WorkoutPlansPage::default(pool.clone()),
+            start_workout_page: StartWorkoutPage::default(pool.clone()),
         }
     }
 
@@ -75,38 +75,19 @@ impl WorkoutUtil {
         });
     }
 
-    fn render_page(&mut self, ui: &mut egui::Ui) {
+    fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         match self.current_page {
-            MainPageState::Home => self.render_home(ui),
-            MainPageState::Exercises => self.render_exercises(ui),
-            MainPageState::Workouts => self.render_workouts(ui),
-            MainPageState::WorkoutPlans => self.render_workout_plans(ui),
-            MainPageState::StartWorkout => self.render_start_workout(ui),
+            MainPageState::Home => self.render_home(ctx, ui),
+            MainPageState::Exercises => self.exercises_page.render_page(ctx, ui),
+            MainPageState::Workouts => self.workouts_page.render_page(ctx, ui),
+            MainPageState::WorkoutPlans => self.workout_plans_page.render_page(ctx, ui),
+            MainPageState::StartWorkout => self.start_workout_page.render_page(ctx, ui),
         }
     }
 
-    fn render_home(&mut self, ui: &mut egui::Ui) {
+    fn render_home(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.heading("Home");
         ui.label("Welcome to Workout Util!");
-    }
-
-    fn render_exercises(&mut self, ui: &mut egui::Ui) {
-        self.exercises_page.render_page(&mut self.pool, ui);
-    }
-
-    fn render_workouts(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Workouts");
-        self.workouts_page.render_page(&mut self.pool, ui);
-    }
-
-    fn render_workout_plans(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Workouts Plans");
-        self.workout_plans_page.render_page(&mut self.pool, ui);
-    }
-
-    fn render_start_workout(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Start Workout");
-        self.start_workout_page.render_page(&mut self.pool, ui);
     }
 
     fn footer(&mut self, ui: &mut egui::Ui) {
@@ -148,7 +129,7 @@ impl eframe::App for WorkoutUtil {
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            self.render_page(ui);
+            self.render_page(ctx, ui);
         });
     }
 }

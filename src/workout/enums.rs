@@ -1,6 +1,6 @@
-use std::fmt;
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type)]
 pub enum LeverVariation {
@@ -18,7 +18,7 @@ impl fmt::Display for LeverVariation {
             LeverVariation::Tuck => write!(f, "Tuck"),
             LeverVariation::AdvancedTuck => write!(f, "Advanced Tuck"),
             LeverVariation::Straddle => write!(f, "Straddle"),
-            LeverVariation::OneLeg => write!(f, "One Leg"),  // Fixed spacing
+            LeverVariation::OneLeg => write!(f, "One Leg"), // Fixed spacing
             LeverVariation::HalfLay => write!(f, "Half Lay"),
             LeverVariation::Full => write!(f, "Full"),
         }

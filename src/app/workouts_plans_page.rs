@@ -1,16 +1,18 @@
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 
-pub struct WorkoutPlansPage {}
+pub struct WorkoutPlansPage {
+    pool: Pool<Sqlite>,
+}
 
-impl Default for WorkoutPlansPage {
-    fn default() -> Self {
-        Self {}
+impl WorkoutPlansPage {
+    pub(crate) fn default(pool: Pool<Sqlite>) -> Self {
+        Self { pool }
     }
 }
 
 impl WorkoutPlansPage {
-    pub fn render_page(&mut self, pool: &mut Pool<Sqlite>, ui: &mut egui::Ui) {
+    pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         todo!("render workouts page");
     }
 }
