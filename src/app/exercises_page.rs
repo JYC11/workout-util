@@ -1,7 +1,6 @@
 use crate::app::utils;
-use crate::db::pagination_support::{
-    PaginationDirection, PaginationParams, PaginationRes, PaginationState,
-};
+use crate::app::utils::{CommonUiState, filter_combo};
+use crate::db::pagination_support::{PaginationRes, PaginationState};
 use crate::workout::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
@@ -21,30 +20,21 @@ use std::time::{Duration, Instant};
 
 pub struct ExercisesPage {
     state: ExercisesPageState,
-
     // Data
     list_items: Vec<ExerciseLibraryRes>,
     current_detail: Option<ValidExercise>,
-
     // Form State
     form_data: ExerciseLibraryReq,
-
     // Search/Filter State
     filter_name: String,
     pagination_filters: ExerciseLibraryFilterReq,
-
     // Pagination State
     pagination_state: PaginationState,
-
     // Async Communication
     receiver: Receiver<ExercisesPageMsg>,
     sender: Sender<ExercisesPageMsg>,
-
     // UI Status
-    error_message: Option<(String, Instant)>,
-    success_message: Option<(String, Instant)>,
-    loading: bool,
-    initialized: bool,
+    common_ui_state: CommonUiState,
 }
 
 pub enum ExercisesPageMsg {
@@ -68,10 +58,7 @@ impl Default for ExercisesPage {
             pagination_state: PaginationState::default(),
             receiver,
             sender,
-            error_message: None,
-            success_message: None,
-            loading: false,
-            initialized: false,
+            common_ui_state: CommonUiState::default(),
         }
     }
 }
@@ -86,7 +73,7 @@ pub enum ExercisesPageState {
 impl ExercisesPage {
     fn handle_async_messages(&mut self) {
         while let Ok(msg) = self.receiver.try_recv() {
-            self.loading = false;
+            self.common_ui_state.set_as_not_loading();
             match msg {
                 ExercisesPageMsg::ListLoaded(res) => {
                     self.list_items = res.items;
@@ -120,26 +107,27 @@ impl ExercisesPage {
     }
 
     fn show_error(&mut self, msg: &str) {
-        self.error_message = Some((msg.to_string(), Instant::now()));
+        self.common_ui_state.error_message = Some((msg.to_string(), Instant::now()));
     }
 
     fn show_success(&mut self, msg: &str) {
-        self.success_message = Some((msg.to_string(), Instant::now()));
+        self.common_ui_state.success_message = Some((msg.to_string(), Instant::now()));
     }
 
     fn trigger_list_refresh(&mut self) {
-        self.initialized = false;
+        self.common_ui_state.not_initialized();
     }
 
     fn fetch_list(&mut self, pool: &Pool<Sqlite>) {
-        if self.loading {
+        if self.common_ui_state.loading {
             return;
         }
-        self.loading = true;
+        self.common_ui_state.set_as_loading();
 
         let sender = self.sender.clone();
         let pool = pool.clone();
-        let name_filter = if self.filter_name.is_empty() {
+        let mut filter = self.pagination_filters.clone();
+        filter.name = if self.filter_name.is_empty() {
             None
         } else {
             Some(self.filter_name.clone())
@@ -147,19 +135,6 @@ impl ExercisesPage {
         let params = self.pagination_state.to_pagination_params();
 
         tokio::spawn(async move {
-            let filter = ExerciseLibraryFilterReq {
-                name: name_filter,
-                push_or_pull: None,
-                dynamic_or_static: None,
-                straight_or_bent: None,
-                squat_or_hinge: None,
-                upper_or_lower: None,
-                compound_or_isolation: None,
-                lever_variation: None,
-                grip: None,
-                grip_width: None,
-            };
-
             match paginate_exercises(&pool, Some(filter), params).await {
                 Ok(res) => {
                     let _ = sender.send(ExercisesPageMsg::ListLoaded(res));
@@ -172,7 +147,7 @@ impl ExercisesPage {
     }
 
     fn fetch_detail(&mut self, pool: &Pool<Sqlite>, id: u32) {
-        self.loading = true;
+        self.common_ui_state.set_as_loading();
         let tx = self.sender.clone();
         let pool = pool.clone();
 
@@ -189,7 +164,7 @@ impl ExercisesPage {
     }
 
     fn save_exercise(&mut self, pool: &Pool<Sqlite>) {
-        self.loading = true;
+        self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
         let pool = pool.clone();
         let req = self.form_data.clone();
@@ -250,7 +225,7 @@ impl ExercisesPage {
         } else {
             return;
         };
-        self.loading = true;
+        self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
         let pool = pool.clone();
 
@@ -561,6 +536,103 @@ impl ExercisesPage {
         });
     }
 
+    fn render_filters(&mut self, ui: &mut egui::Ui) {
+        let mut changed = false;
+
+        ui.collapsing("Filters", |ui| {
+            egui::Grid::new("filters_grid")
+                .num_columns(4)
+                .striped(true)
+                .show(ui, |ui| {
+                    changed |= filter_combo(
+                        ui,
+                        "Upper/Lower",
+                        &mut self.pagination_filters.upper_or_lower,
+                        &[UpperOrLower::Upper, UpperOrLower::Lower],
+                    );
+                    changed |= filter_combo(
+                        ui,
+                        "Compound/Isolation",
+                        &mut self.pagination_filters.compound_or_isolation,
+                        &[
+                            CompoundOrIsolation::Compound,
+                            CompoundOrIsolation::Isolation,
+                        ],
+                    );
+                    ui.end_row();
+
+                    changed |= filter_combo(
+                        ui,
+                        "Push/Pull",
+                        &mut self.pagination_filters.push_or_pull,
+                        &[PushOrPull::Push, PushOrPull::Pull],
+                    );
+                    changed |= filter_combo(
+                        ui,
+                        "Dynamic/Static",
+                        &mut self.pagination_filters.dynamic_or_static,
+                        &[DynamicOrStatic::Dynamic, DynamicOrStatic::Static],
+                    );
+                    ui.end_row();
+
+                    changed |= filter_combo(
+                        ui,
+                        "Straight/Bent",
+                        &mut self.pagination_filters.straight_or_bent,
+                        &[StraightOrBentArm::Straight, StraightOrBentArm::Bent],
+                    );
+                    changed |= filter_combo(
+                        ui,
+                        "Squat/Hinge",
+                        &mut self.pagination_filters.squat_or_hinge,
+                        &[SquatOrHinge::Squat, SquatOrHinge::Hinge],
+                    );
+                    ui.end_row();
+
+                    changed |= filter_combo(
+                        ui,
+                        "Grip",
+                        &mut self.pagination_filters.grip,
+                        &[
+                            Grip::Pronated,
+                            Grip::Supinated,
+                            Grip::Neutral,
+                            Grip::GymnasticsRing,
+                            Grip::Floor,
+                            Grip::Mixed,
+                        ],
+                    );
+                    changed |= filter_combo(
+                        ui,
+                        "Grip Width",
+                        &mut self.pagination_filters.grip_width,
+                        &[GripWidth::Narrow, GripWidth::Shoulder, GripWidth::Wide],
+                    );
+                    ui.end_row();
+
+                    changed |= filter_combo(
+                        ui,
+                        "Lever",
+                        &mut self.pagination_filters.lever_variation,
+                        &[
+                            LeverVariation::Tuck,
+                            LeverVariation::AdvancedTuck,
+                            LeverVariation::Straddle,
+                            LeverVariation::HalfLay,
+                            LeverVariation::OneLeg,
+                            LeverVariation::Full,
+                        ],
+                    );
+                    ui.end_row();
+                });
+        });
+
+        if changed {
+            self.pagination_state.reset_pagination();
+            self.trigger_list_refresh();
+        }
+    }
+
     fn render_list(&mut self, ui: &mut egui::Ui, pool: &mut Pool<Sqlite>) {
         ui.horizontal(|ui| {
             ui.heading("Exercises");
@@ -580,6 +652,8 @@ impl ExercisesPage {
                 self.trigger_list_refresh();
             }
         });
+
+        self.render_filters(ui);
 
         ui.separator();
 
@@ -634,7 +708,7 @@ impl ExercisesPage {
                     self.state = ExercisesPageState::DetailsEditView;
                 }
                 ListAction::Delete(id) => {
-                    self.loading = true;
+                    self.common_ui_state.set_as_loading();
                     let tx = self.sender.clone();
                     let pool = pool.clone();
                     tokio::spawn(async move {
@@ -659,6 +733,16 @@ impl ExercisesPage {
         ui.separator();
 
         ui.horizontal(|ui| {
+            ui.label("Limit:");
+            let mut limit = self.pagination_state.limit;
+            if ui
+                .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
+                .changed()
+            {
+                self.pagination_state.limit = limit;
+                self.trigger_list_refresh();
+            }
+
             if self.pagination_state.has_previous() {
                 if ui.button("Previous").clicked() {
                     self.pagination_state.go_backwards();
@@ -679,24 +763,26 @@ impl ExercisesPage {
         self.handle_async_messages();
 
         // Show Toasts
-        if let Some((msg, time)) = &self.error_message {
+        if let Some((msg, time)) = &self.common_ui_state.error_message {
             if time.elapsed() > Duration::from_secs(5) {
-                self.error_message = None;
+                self.common_ui_state.clear_error();
             } else {
                 ui.colored_label(egui::Color32::RED, msg);
             }
         }
-        if let Some((msg, time)) = &self.success_message {
+        if let Some((msg, time)) = &self.common_ui_state.success_message {
             if time.elapsed() > Duration::from_secs(3) {
-                self.success_message = None;
+                self.common_ui_state.clear_success();
             } else {
                 ui.colored_label(egui::Color32::GREEN, msg);
             }
         }
 
-        if !self.initialized && matches!(self.state, ExercisesPageState::DetailsClosed) {
+        if !self.common_ui_state.initialized
+            && matches!(self.state, ExercisesPageState::DetailsClosed)
+        {
             self.fetch_list(pool);
-            self.initialized = true;
+            self.common_ui_state.initialize();
         }
 
         match self.state {

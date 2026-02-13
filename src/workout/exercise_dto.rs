@@ -42,6 +42,7 @@ impl HasId for ExerciseLibraryRes {
     }
 }
 
+#[derive(Clone)]
 pub struct ExerciseLibraryFilterReq {
     pub name: Option<String>,
     pub push_or_pull: Option<Vec<PushOrPull>>,
