@@ -27,6 +27,58 @@ pub struct PaginationParams {
     pub direction: PaginationDirection,
 }
 
+pub struct PaginationState {
+    pub limit: u32,
+    pub next_cursor: Option<u32>,
+    pub prev_cursor: Option<u32>,
+    pub current_cursor: Option<u32>, // Cursor used for current page
+    pub direction: PaginationDirection,
+}
+
+impl Default for PaginationState {
+    fn default() -> Self {
+        Self {
+            limit: 50,
+            next_cursor: None,
+            prev_cursor: None,
+            current_cursor: None,
+            direction: PaginationDirection::Forward,
+        }
+    }
+}
+
+impl PaginationState {
+    pub fn reset_pagination(&mut self) {
+        self.next_cursor = None;
+    }
+
+    pub fn has_previous(&self) -> bool {
+        self.prev_cursor.is_some()
+    }
+
+    pub fn has_next(&self) -> bool {
+        self.next_cursor.is_some()
+    }
+
+    pub fn go_backwards(&mut self) {
+        self.current_cursor = self.prev_cursor;
+        self.direction = PaginationDirection::Backward;
+    }
+
+    pub fn go_forwards(&mut self) {
+        self.current_cursor = self.next_cursor;
+        self.direction = PaginationDirection::Forward;
+    }
+
+    pub fn to_pagination_params(&self) -> PaginationParams {
+        PaginationParams {
+            limit: self.limit,
+            cursor: self.current_cursor,
+            direction: self.direction,
+        }
+    }
+}
+
 pub fn keyset_paginate(params: &PaginationParams, qb: &mut QueryBuilder<Sqlite>) {
     match params.direction {
         PaginationDirection::Forward => {

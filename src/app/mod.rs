@@ -1,5 +1,6 @@
 mod exercises_page;
 mod start_workout_page;
+mod utils;
 mod workouts_page;
 mod workouts_plans_page;
 
@@ -90,7 +91,6 @@ impl WorkoutUtil {
     }
 
     fn render_exercises(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Exercises");
         self.exercises_page.render_page(&mut self.pool, ui);
     }
 

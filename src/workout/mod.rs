@@ -1,4 +1,4 @@
-mod enums;
+pub mod enums;
 pub mod exercise;
 pub mod exercise_dto;
 pub mod workout;
