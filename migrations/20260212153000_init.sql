@@ -25,7 +25,6 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT NOT NULL,         -- DateTime stored as String
     workout_id INTEGER NOT NULL,
-    exercise_id INTEGER NOT NULL,
     code TEXT NOT NULL,               -- e.g., "A1", "B2"
     sets_target INTEGER NOT NULL,
     reps_or_seconds_target INTEGER NOT NULL,
@@ -36,8 +35,7 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     equipments TEXT NOT NULL,         -- Serialized List/JSON
     bands TEXT NOT NULL,              -- Serialized List/JSON
     description TEXT,
-    FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE RESTRICT,
-    FOREIGN KEY (exercise_id) REFERENCES exercise_library(id) ON DELETE RESTRICT
+    FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS workout_log_groups (

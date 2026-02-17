@@ -14,7 +14,6 @@ pub struct WorkoutExerciseEntity {
     pub id: u32,
     pub created_at: DateTime<Utc>, // should be some kinda DateTime
     pub workout_id: u32,           // fk to Workout
-    pub exercise_id: u32,          // fk to ExerciseLibraryEntry
     pub code: String,              // A1, A2, B1, B2 ... input by user
     pub sets_target: u8,
     pub reps_or_seconds_target: u8,
@@ -145,15 +144,13 @@ pub async fn create_workout_exercise(
     let result = sqlx::query(
         r#"
         INSERT INTO workout_exercises (
-            created_at, workout_id, exercise_id, code,
-            sets_target, reps_or_seconds_target, working_weight,
+            created_at, workout_id, code, sets_target, reps_or_seconds_target, working_weight,
             rest_period_seconds, tempo, emom, equipments, bands, description
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
     .bind(created_at)
     .bind(req.workout_id)
-    .bind(req.exercise_id)
     .bind(&req.code)
     .bind(req.sets_target)
     .bind(req.reps_or_seconds_target)
@@ -180,7 +177,7 @@ pub async fn update_workout_exercise(
     let result = sqlx::query(
         r#"
         UPDATE workout_exercises
-        SET workout_id = ?, exercise_id = ?, code = ?,
+        SET workout_id = ?, code = ?,
             sets_target = ?, reps_or_seconds_target = ?, working_weight = ?,
             rest_period_seconds = ?, tempo = ?, emom = ?, equipments = ?,
             bands = ?, description = ?
@@ -188,7 +185,6 @@ pub async fn update_workout_exercise(
         "#,
     )
     .bind(req.workout_id)
-    .bind(req.exercise_id)
     .bind(&req.code)
     .bind(req.sets_target)
     .bind(req.reps_or_seconds_target)
@@ -244,7 +240,6 @@ pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
     Ok(WorkoutExerciseRes {
         id: row.id,
         workout_id: row.workout_id,
-        exercise_id: row.exercise_id,
         code: row.code,
         sets_target: row.sets_target,
         reps_or_seconds_target: row.reps_or_seconds_target,
@@ -278,12 +273,10 @@ mod tests {
 
     fn mock_workout_exercise_req(
         workout_id: u32,
-        exercise_id: u32,
         code: &str,
     ) -> WorkoutExerciseReq {
         WorkoutExerciseReq {
             workout_id,
-            exercise_id,
             code: code.to_string(),
             sets_target: 4,
             reps_or_seconds_target: 8,
@@ -350,27 +343,10 @@ mod tests {
             .await
             .unwrap();
 
-        // For exercise_id, we'll assume exercise ID 1 exists (or create one)
-        // Since this test focuses on workout_exercise, we can insert a minimal exercise
-        // directly into exercise_library to avoid dependency on other modules
-        sqlx::query(
-            r#"INSERT INTO exercise_library (
-                name, dynamic_or_static, upper_or_lower, compound_or_isolation
-            ) VALUES (?, ?, ?, ?)"#,
-        )
-        .bind("Dummy Pushup")
-        .bind(crate::workout::enums::DynamicOrStatic::Dynamic)
-        .bind(crate::workout::enums::UpperOrLower::Upper)
-        .bind(crate::workout::enums::CompoundOrIsolation::Compound)
-        .execute(&mut *tx)
-        .await
-        .unwrap();
-        let exercise_id = 1; // first autoincrement ID
-
         // Create
         let ex_id = create_workout_exercise(
             &mut tx,
-            mock_workout_exercise_req(workout_id, exercise_id, "A1"),
+            mock_workout_exercise_req(workout_id, "A1"),
         )
         .await
         .expect("Failed to create workout exercise");
@@ -381,13 +357,12 @@ mod tests {
             .expect("Failed to get workout exercise");
         assert_eq!(ex.code, "A1");
         assert_eq!(ex.workout_id, workout_id);
-        assert_eq!(ex.exercise_id, exercise_id);
         assert_eq!(ex.equipments, vec![Equipment::Barbell]);
         assert_eq!(ex.bands, vec![Band::Black]);
         assert_eq!(ex.tempo, "2010");
 
         // Update
-        let mut updated_req = mock_workout_exercise_req(workout_id, exercise_id, "A2");
+        let mut updated_req = mock_workout_exercise_req(workout_id, "A2");
         updated_req.sets_target = 5;
         updated_req.working_weight = 120;
         updated_req.equipments = vec![Equipment::Dumbbells];
@@ -439,7 +414,7 @@ mod tests {
             .unwrap();
 
         // Create a workout exercise → now workout is referenced
-        create_workout_exercise(&mut tx, mock_workout_exercise_req(workout_id, 1, "A1"))
+        create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1"))
             .await
             .unwrap();
 
@@ -469,7 +444,7 @@ mod tests {
             .unwrap();
 
         let ex_id =
-            create_workout_exercise(&mut tx, mock_workout_exercise_req(workout_id, 1, "A1"))
+            create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1"))
                 .await
                 .unwrap();
 
