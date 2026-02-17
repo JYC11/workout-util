@@ -1,16 +1,13 @@
 use crate::app::utils::CommonUiState;
 use crate::db::pagination_support::PaginationState;
-use crate::workout::exercise_dto::ExerciseLibraryFilterReq;
 use crate::workout::workout_dto::WorkoutsFilterReq;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use std::sync::mpsc::{Receiver, Sender, channel};
+use std::sync::mpsc::{channel, Receiver, Sender};
 
 pub struct WorkoutsPage {
     pool: Pool<Sqlite>,
     state: WorkoutsPageState,
-    // Exercise Search/Filter State
-    exercise_filters: ExerciseLibraryFilterReq,
     // Workout Search/Filter State
     workout_filters: WorkoutsFilterReq,
     // Workout Pagination State
@@ -36,7 +33,6 @@ impl WorkoutsPage {
         Self {
             pool,
             state: WorkoutsPageState::DetailsClosed,
-            exercise_filters: ExerciseLibraryFilterReq::default(),
             workout_filters: WorkoutsFilterReq::default(),
             workout_pagination_state: PaginationState::default(),
             receiver,
@@ -55,12 +51,7 @@ pub enum WorkoutsPageState {
 
 /* aiming for something like this for the form:
 [ Create Workout ]
-┌───────────────────────────────────────────────┐
-│  🔍 Search Exercises (with filter buttons)    │
-├───────────────────────────────────────────────┤
-│  [BENCH PRESS]  [+]  [PULL-UP]  [+]  [SQUAT] [+]  │
-│  [ROWS]         [+]  [PUSH-UP]  [+]  ...        │
-│  (Scrollable exercise library - 3-4 items visible)│
+
 ├───────────────────────────────────────────────┤
 │  YOUR WORKOUT PLAN                            │
 ├───────────────────────────────────────────────┤
@@ -82,14 +73,6 @@ pub enum WorkoutsPageState {
 
 impl WorkoutsPage {
     fn handle_async_messages(&mut self) {}
-
-    fn render_exercise_filters(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        // the filters for the exercises list on the top of the workout builder form
-    }
-
-    fn render_exercises_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        // the small list of exercises on top of the main workout builder form
-    }
 
     fn render_workout_exercise_form(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         // for editing the exercise code, sets, reps, weight, etc. of an exercise in a workout

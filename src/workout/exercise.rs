@@ -1,5 +1,5 @@
 use crate::db::pagination_support::{
-    PaginationDirection, PaginationParams, PaginationRes, get_cursors, keyset_paginate,
+    get_cursors, keyset_paginate, PaginationDirection, PaginationParams, PaginationRes,
 };
 use crate::workout::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
@@ -183,20 +183,20 @@ pub async fn create_exercise(
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
-    .bind(entity.name)
-    .bind(entity.push_or_pull)
-    .bind(entity.dynamic_or_static)
-    .bind(entity.straight_or_bent)
-    .bind(entity.squat_or_hinge)
-    .bind(entity.upper_or_lower)
-    .bind(entity.compound_or_isolation)
-    .bind(entity.lever_variation)
-    .bind(entity.grip)
-    .bind(entity.grip_width)
-    .bind(entity.description)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to create exercise: {}", e))?;
+        .bind(entity.name)
+        .bind(entity.push_or_pull)
+        .bind(entity.dynamic_or_static)
+        .bind(entity.straight_or_bent)
+        .bind(entity.squat_or_hinge)
+        .bind(entity.upper_or_lower)
+        .bind(entity.compound_or_isolation)
+        .bind(entity.lever_variation)
+        .bind(entity.grip)
+        .bind(entity.grip_width)
+        .bind(entity.description)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create exercise: {}", e))?;
 
     let id = result.last_insert_rowid() as u32;
 
@@ -296,20 +296,20 @@ pub async fn update_exercise(
         WHERE id = ?
         "#,
     )
-    .bind(name)
-    .bind(push_or_pull)
-    .bind(dynamic_or_static)
-    .bind(straight_or_bent)
-    .bind(squat_or_hinge)
-    .bind(upper_or_lower)
-    .bind(compound_or_isolation)
-    .bind(lever_variation)
-    .bind(grip)
-    .bind(grip_width)
-    .bind(id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|e| format!("Failed to update exercise: {}", e))?;
+        .bind(name)
+        .bind(push_or_pull)
+        .bind(dynamic_or_static)
+        .bind(straight_or_bent)
+        .bind(squat_or_hinge)
+        .bind(upper_or_lower)
+        .bind(compound_or_isolation)
+        .bind(lever_variation)
+        .bind(grip)
+        .bind(grip_width)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update exercise: {}", e))?;
 
     if result.rows_affected() == 0 {
         return Err("Exercise not found".to_string());
@@ -335,7 +335,7 @@ pub async fn delete_exercise(
     Ok(())
 }
 
-pub async fn get_one_exercise<'e, E: Executor<'e, Database = Sqlite>>(
+pub async fn get_one_exercise<'e, E: Executor<'e, Database=Sqlite>>(
     executor: E,
     exercise_id: u32,
 ) -> Result<ValidExercise, String> {
@@ -349,7 +349,7 @@ pub async fn get_one_exercise<'e, E: Executor<'e, Database = Sqlite>>(
     row.to_valid_struct()
 }
 
-pub async fn paginate_exercises<'e, E: Executor<'e, Database = Sqlite>>(
+pub async fn paginate_exercises<'e, E: Executor<'e, Database=Sqlite>>(
     executor: E,
     filter_req: Option<ExerciseLibraryFilterReq>,
     pagination_params: PaginationParams,
@@ -483,7 +483,7 @@ fn pagination_filters(filter_req: Option<ExerciseLibraryFilterReq>, qb: &mut Que
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::db::{init_db, IN_MEMORY_DB_URL};
     use crate::workout::enums::*;
     use sqlx::SqlitePool;
 
@@ -559,8 +559,8 @@ mod tests {
                 direction: PaginationDirection::Forward,
             },
         )
-        .await
-        .expect("Failed to get exercise");
+            .await
+            .expect("Failed to get exercise");
 
         assert_eq!(result.items.len(), 1);
         assert_eq!(result.items[0].id, 1);
@@ -580,8 +580,8 @@ mod tests {
                 direction: PaginationDirection::Forward,
             },
         )
-        .await
-        .unwrap();
+            .await
+            .unwrap();
         assert_eq!(result.items.len(), 1);
         assert_eq!(result.items[0].id, 1);
         assert_eq!(result.next_cursor, Some(1));
@@ -597,8 +597,8 @@ mod tests {
                 direction: PaginationDirection::Forward,
             },
         )
-        .await
-        .unwrap();
+            .await
+            .unwrap();
         assert_eq!(result.items.len(), 1);
         assert_eq!(result.items[0].id, 2);
         assert_eq!(result.next_cursor, None);
@@ -614,8 +614,8 @@ mod tests {
                 direction: PaginationDirection::Backward,
             },
         )
-        .await
-        .unwrap();
+            .await
+            .unwrap();
         assert_eq!(result.items.len(), 1);
         assert_eq!(result.items[0].id, 1);
         assert_eq!(result.next_cursor, Some(1)); // Can go forward
@@ -631,8 +631,8 @@ mod tests {
                 direction: PaginationDirection::Forward,
             },
         )
-        .await
-        .expect("Failed to get exercise");
+            .await
+            .expect("Failed to get exercise");
 
         assert_eq!(result.items.len(), 0);
 
@@ -657,8 +657,8 @@ mod tests {
                 direction: PaginationDirection::Forward,
             },
         )
-        .await
-        .expect("Failed to get exercise");
+            .await
+            .expect("Failed to get exercise");
 
         assert_eq!(result.items.len(), 0);
 
@@ -683,8 +683,8 @@ mod tests {
                 direction: PaginationDirection::Forward,
             },
         )
-        .await
-        .expect("Failed to get exercise");
+            .await
+            .expect("Failed to get exercise");
 
         assert_eq!(result.items.len(), 1);
 
