@@ -135,6 +135,7 @@ impl WorkoutUtil {
             if ui.button(if self.metronome.is_running { "Stop" } else { "Start" }).clicked() {
                 self.metronome.toggle();
             }
+            ui.add(egui::Slider::new(&mut self.metronome.volume, 1.0..=50.0).text("Volume"));
         });
     }
 }
