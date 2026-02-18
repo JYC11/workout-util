@@ -1,10 +1,11 @@
 use crate::exercise::exercises_page::ExercisesPage;
+use crate::timer::metronome::Metronome;
+use crate::timer::rest_timer::RestTimer;
 use crate::workout::start_workout_page::StartWorkoutPage;
 use crate::workout_log::workout_logs_page::WorkoutLogsPage;
 use crate::workout_log::workouts_page::WorkoutsPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use crate::timer::metronome::Metronome;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MainPageState {
@@ -28,6 +29,7 @@ pub struct WorkoutUtil {
     start_workout_page: StartWorkoutPage,
     workout_logs_page: WorkoutLogsPage,
     metronome: Metronome,
+    rest_timer: RestTimer,
 }
 
 impl WorkoutUtil {
@@ -40,6 +42,7 @@ impl WorkoutUtil {
             start_workout_page: StartWorkoutPage::default(pool.clone()),
             workout_logs_page: WorkoutLogsPage::default(pool.clone()),
             metronome: Metronome::new(),
+            rest_timer: RestTimer::new(),
         }
     }
 
@@ -114,25 +117,52 @@ impl WorkoutUtil {
 
     fn footer(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         self.metronome.tick();
-        
-        if self.metronome.is_running {
+        self.rest_timer.tick();
+
+        if self.metronome.is_running || self.rest_timer.is_running {
             ctx.request_repaint();
         }
 
         ui.horizontal(|ui| {
             ui.label("Rest Timer");
             ui.separator();
-            ui.label("00:00:00");
-            // TODO add time input and make it count down and emit noise when done
-            if ui.button("Start").clicked() {
-                println!("Clicked start");
+            ui.add(
+                egui::DragValue::new(&mut self.rest_timer.input_minutes)
+                    .suffix("m")
+                    .range(0..=60),
+            );
+            ui.add(
+                egui::DragValue::new(&mut self.rest_timer.input_seconds)
+                    .suffix("s")
+                    .range(0..=59),
+            );
+
+            let minutes = self.rest_timer.current_seconds / 60;
+            let seconds = self.rest_timer.current_seconds % 60;
+            ui.label(format!("{:02}:{:02}", minutes, seconds));
+
+            if ui
+                .button(if self.rest_timer.is_running {
+                    "Stop"
+                } else {
+                    "Start"
+                })
+                .clicked()
+            {
+                self.rest_timer.toggle();
             }
-            if ui.button("Stop").clicked() {
-                println!("Clicked stop");
-            }
+            ui.add(egui::Slider::new(&mut self.rest_timer.volume, 1.0..=50.0).text("Volume"));
+
             ui.separator();
             ui.label("Metronome");
-            if ui.button(if self.metronome.is_running { "Stop" } else { "Start" }).clicked() {
+            if ui
+                .button(if self.metronome.is_running {
+                    "Stop"
+                } else {
+                    "Start"
+                })
+                .clicked()
+            {
                 self.metronome.toggle();
             }
             ui.add(egui::Slider::new(&mut self.metronome.volume, 1.0..=50.0).text("Volume"));

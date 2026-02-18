@@ -22,7 +22,7 @@ impl AudioEngine {
         self.sink.append(
             SineWave::new(880.0)
                 .take_duration(Duration::from_millis(100))
-                .amplify(volume)
+                .amplify(volume),
         );
     }
 }

@@ -1,5 +1,5 @@
-use std::time::{Duration, Instant};
 use crate::timer::audio_engine::AudioEngine;
+use std::time::{Duration, Instant};
 
 // timer
 pub struct Metronome {

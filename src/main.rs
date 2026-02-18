@@ -11,7 +11,6 @@ mod timer;
 pub mod workout;
 pub mod workout_log;
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     run_app().await?;
