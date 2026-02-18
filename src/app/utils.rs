@@ -1,5 +1,5 @@
 use eframe::egui;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 pub struct CommonUiState {
     pub error_message: Option<(String, Instant)>,
@@ -50,6 +50,23 @@ impl CommonUiState {
 
     pub fn show_success(&mut self, msg: &str) {
         self.success_message = Some((msg.to_string(), Instant::now()));
+    }
+
+    pub fn show_toasts(&mut self, ui: &mut egui::Ui) {
+        if let Some((msg, time)) = &self.error_message {
+            if time.elapsed() > Duration::from_secs(5) {
+                self.clear_error();
+            } else {
+                ui.colored_label(egui::Color32::RED, msg);
+            }
+        }
+        if let Some((msg, time)) = &self.success_message {
+            if time.elapsed() > Duration::from_secs(3) {
+                self.clear_success();
+            } else {
+                ui.colored_label(egui::Color32::GREEN, msg);
+            }
+        }
     }
 }
 

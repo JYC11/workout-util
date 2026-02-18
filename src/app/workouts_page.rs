@@ -736,20 +736,7 @@ impl WorkoutsPage {
     pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
         self.handle_async_messages();
 
-        if let Some((msg, time)) = &self.common_ui_state.error_message {
-            if time.elapsed() > Duration::from_secs(5) {
-                self.common_ui_state.clear_error();
-            } else {
-                ui.colored_label(egui::Color32::RED, msg);
-            }
-        }
-        if let Some((msg, time)) = &self.common_ui_state.success_message {
-            if time.elapsed() > Duration::from_secs(3) {
-                self.common_ui_state.clear_success();
-            } else {
-                ui.colored_label(egui::Color32::GREEN, msg);
-            }
-        }
+        self.common_ui_state.show_toasts(ui);
 
         if !self.common_ui_state.initialized
             && matches!(self.state, WorkoutsPageState::DetailsClosed)

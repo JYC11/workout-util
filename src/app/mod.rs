@@ -91,8 +91,7 @@ impl WorkoutUtil {
                 PageAction::None
             }
             MainPageState::Workouts => {
-                self.workouts_page.render_page(ctx, ui);
-                PageAction::None
+                self.workouts_page.render_page(ctx, ui)
             }
             MainPageState::StartWorkout => {
                 self.start_workout_page.render_page(ctx, ui, None);
