@@ -1,8 +1,8 @@
-use crate::core::enums::{
+use crate::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
-use crate::core::exercise::exercise_dto::{
+use crate::exercise::exercise_dto::{
     BentArmCompoundExercise, ExerciseLibraryReq, LowerBodyCompoundExercise,
     LowerBodyIsolationExercise, StraightArmCompoundExercise, UpperBodyIsolationExercise,
     ValidExercise,
@@ -168,11 +168,11 @@ impl ExerciseLibraryEntity {
 
 #[cfg(test)]
 mod test {
-    use crate::core::enums::{
+    use crate::enums::{
         CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
         SquatOrHinge, StraightOrBentArm, UpperOrLower,
     };
-    use crate::core::exercise::exercise_entity::ExerciseLibraryEntity;
+    use crate::exercise::exercise_entity::ExerciseLibraryEntity;
 
     #[test]
     fn test_to_valid_struct_upper_body_dynamic_compound() {

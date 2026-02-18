@@ -1,5 +1,5 @@
-use crate::core::enums::{Band, Equipment};
 use crate::db::pagination_support::HasId;
+use crate::enums::{Band, Equipment};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::types::Json;

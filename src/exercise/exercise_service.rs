@@ -1,8 +1,8 @@
-use crate::core::exercise::exercise_dto::{
+use crate::db::pagination_support::{PaginationParams, PaginationRes};
+use crate::exercise::exercise_dto::{
     ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise,
 };
-use crate::core::exercise::exercise_repo::ExerciseRepo;
-use crate::db::pagination_support::{PaginationParams, PaginationRes};
+use crate::exercise::exercise_repo::ExerciseRepo;
 use sqlx::{Pool, Sqlite};
 
 #[derive(Clone)]

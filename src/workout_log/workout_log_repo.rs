@@ -1,6 +1,6 @@
-use crate::core::workout_log::workout_log_dto::{WorkoutLogReq, WorkoutLogRes};
-use crate::core::workout_log::workout_log_entity::{WorkoutLogEntity, WorkoutLogGroupEntity};
 use crate::db::pagination_support::PaginationParams;
+use crate::workout_log::workout_log_dto::{WorkoutLogReq, WorkoutLogRes};
+use crate::workout_log::workout_log_entity::{WorkoutLogEntity, WorkoutLogGroupEntity};
 use chrono::{NaiveDate, Utc};
 use sqlx::{Executor, Sqlite, Transaction};
 
@@ -145,10 +145,10 @@ impl WorkoutLogRepo {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::enums::{Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower};
-    use crate::core::workout_log::workout_log_dto::WorkoutLogReq;
-    use crate::core::workout_log::workout_log_repo::WorkoutLogRepo;
     use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::enums::{Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower};
+    use crate::workout_log::workout_log_dto::WorkoutLogReq;
+    use crate::workout_log::workout_log_repo::WorkoutLogRepo;
     use chrono::Utc;
     use sqlx::{Sqlite, SqlitePool, Transaction};
 

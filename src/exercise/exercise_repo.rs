@@ -1,14 +1,14 @@
-use crate::core::enums::{
-    CompoundOrIsolation, Grip, GripWidth, LeverVariation, PushOrPull, SquatOrHinge,
-    StraightOrBentArm, UpperOrLower,
-};
-use crate::core::exercise::exercise_dto::{
-    ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise,
-};
-use crate::core::exercise::exercise_entity::ExerciseLibraryEntity;
 use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
+use crate::enums::{
+    CompoundOrIsolation, Grip, GripWidth, LeverVariation, PushOrPull, SquatOrHinge,
+    StraightOrBentArm, UpperOrLower,
+};
+use crate::exercise::exercise_dto::{
+    ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise,
+};
+use crate::exercise::exercise_entity::ExerciseLibraryEntity;
 use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
 
 #[derive(Clone, Copy)]
@@ -343,13 +343,13 @@ impl ExerciseRepo {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::enums::*;
-    use crate::core::exercise::exercise_dto::{
-        ExerciseLibraryFilterReq, ExerciseLibraryReq, ValidExercise,
-    };
-    use crate::core::exercise::exercise_repo::ExerciseRepo;
     use crate::db::pagination_support::{PaginationDirection, PaginationParams};
     use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::enums::*;
+    use crate::exercise::exercise_dto::{
+        ExerciseLibraryFilterReq, ExerciseLibraryReq, ValidExercise,
+    };
+    use crate::exercise::exercise_repo::ExerciseRepo;
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {

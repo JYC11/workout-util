@@ -1,7 +1,7 @@
-use crate::core::exercise::exercises_page::ExercisesPage;
-use crate::core::workout::start_workout_page::StartWorkoutPage;
-use crate::core::workout_log::workout_logs_page::WorkoutLogsPage;
-use crate::core::workout_log::workouts_page::WorkoutsPage;
+use crate::exercise::exercises_page::ExercisesPage;
+use crate::workout::start_workout_page::StartWorkoutPage;
+use crate::workout_log::workout_logs_page::WorkoutLogsPage;
+use crate::workout_log::workouts_page::WorkoutsPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 

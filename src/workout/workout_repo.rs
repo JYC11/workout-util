@@ -1,10 +1,10 @@
-use crate::core::workout::workout_dto::{
-    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
-};
-use crate::core::workout::workout_entity::{WorkoutEntity, WorkoutExerciseEntity};
 use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
+use crate::workout::workout_dto::{
+    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
+};
+use crate::workout::workout_entity::{WorkoutEntity, WorkoutExerciseEntity};
 use chrono::Utc;
 use sqlx::types::Json;
 use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
@@ -292,11 +292,11 @@ impl WorkoutRepo {
 
 #[cfg(test)]
 mod tests {
-    use crate::core::enums::{Band, Equipment};
-    use crate::core::workout::workout_dto::{WorkoutExerciseReq, WorkoutReq, WorkoutsFilterReq};
-    use crate::core::workout::workout_repo::WorkoutRepo;
     use crate::db::pagination_support::{PaginationDirection, PaginationParams};
     use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::enums::{Band, Equipment};
+    use crate::workout::workout_dto::{WorkoutExerciseReq, WorkoutReq, WorkoutsFilterReq};
+    use crate::workout::workout_repo::WorkoutRepo;
     use chrono::Utc;
     use sqlx::SqlitePool;
 

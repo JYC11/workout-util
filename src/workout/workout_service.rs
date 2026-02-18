@@ -1,8 +1,8 @@
-use crate::core::workout::workout_dto::{
+use crate::db::pagination_support::{PaginationParams, PaginationRes};
+use crate::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
 };
-use crate::core::workout::workout_repo::WorkoutRepo;
-use crate::db::pagination_support::{PaginationParams, PaginationRes};
+use crate::workout::workout_repo::WorkoutRepo;
 use sqlx::{Pool, Sqlite};
 
 #[derive(Clone)]
