@@ -281,6 +281,24 @@ impl WorkoutsPage {
         }
     }
 
+    fn delete_workout_by_id(&mut self, ctx: &egui::Context, id: u32) {
+        self.common_ui_state.set_as_loading();
+        let sender = self.sender.clone();
+        let service = self.service.clone();
+        let ctx = ctx.clone();
+        tokio::spawn(async move {
+            match service.delete(id).await {
+                Ok(_) => {
+                    let _ = sender.send(WorkoutsPageMsg::Deleted);
+                }
+                Err(e) => {
+                    let _ = sender.send(WorkoutsPageMsg::Error(e));
+                }
+            }
+            ctx.request_repaint();
+        });
+    }
+
     fn delete_exercise(&mut self, ctx: &egui::Context, id: u32) {
         if matches!(self.state, WorkoutsPageState::CreateNew) {
             // Remove from memory list (id treated as index)
@@ -717,13 +735,7 @@ impl WorkoutsPage {
                             self.state = WorkoutsPageState::DetailsEditView;
                         }
                         ListAction::Delete(id) => {
-                            self.current_workout = Some(WorkoutRes {
-                                id,
-                                name: String::new(),
-                                description: None,
-                                active: false,
-                            }); // Hack to set ID for delete
-                            self.delete_workout(ctx);
+                            self.delete_workout_by_id(ctx, id);
                         }
                     }
                 }
