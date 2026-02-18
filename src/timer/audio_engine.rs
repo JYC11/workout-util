@@ -1,15 +1,12 @@
 use rodio::source::SineWave;
-// src/timer/audio_engine.rs
 use rodio::{OutputStream, OutputStreamBuilder, Sink, Source};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-// 1. Define the trait
 pub trait AudioBackend {
     fn play_sound(&mut self, volume: f32);
 }
 
-// 2. Your existing struct
 pub struct AudioEngine {
     _stream_handler: OutputStream,
     sink: Sink,
@@ -27,7 +24,6 @@ impl AudioEngine {
     }
 }
 
-
 impl AudioBackend for AudioEngine {
     fn play_sound(&mut self, volume: f32) {
         self.sink.append(
@@ -37,7 +33,6 @@ impl AudioBackend for AudioEngine {
         );
     }
 }
-
 
 #[cfg(test)]
 #[derive(Clone, Default)]

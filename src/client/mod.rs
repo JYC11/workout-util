@@ -1,5 +1,5 @@
 use crate::client::app::WorkoutUtil;
-use crate::db::{init_db, DEFAULT_DB_URL};
+use crate::db::{DEFAULT_DB_URL, init_db};
 use eframe::egui;
 use std::error::Error;
 
@@ -10,7 +10,7 @@ pub async fn run_app() -> Result<(), Box<dyn Error>> {
     let pool = init_db(DEFAULT_DB_URL).await;
 
     let native_options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([800.0, 600.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([1600.0, 1200.0]),
         ..Default::default()
     };
 

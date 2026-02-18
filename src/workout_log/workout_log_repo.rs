@@ -22,12 +22,12 @@ impl WorkoutLogRepo {
         let result = sqlx::query(
             r#"INSERT INTO workout_log_groups (created_at, date, notes) VALUES (?, ?, ?)"#,
         )
-            .bind(created_at)
-            .bind(date)
-            .bind(notes)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to create log group: {}", e))?;
+        .bind(created_at)
+        .bind(date)
+        .bind(notes)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create log group: {}", e))?;
 
         Ok(result.last_insert_rowid() as u32)
     }
@@ -52,7 +52,7 @@ impl WorkoutLogRepo {
     }
 
     // TODO need to join logs
-    pub async fn get_one_log_group<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn get_one_log_group<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         id: u32,
@@ -76,16 +76,16 @@ impl WorkoutLogRepo {
             set_number, rep_number_or_seconds, weight, description
         ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
         )
-            .bind(req.workout_id)
-            .bind(req.workout_exercise_id)
-            .bind(req.workout_log_group_id)
-            .bind(req.set_number)
-            .bind(req.rep_number_or_seconds)
-            .bind(req.weight)
-            .bind(req.description)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to create core log: {}", e))?;
+        .bind(req.workout_id)
+        .bind(req.workout_exercise_id)
+        .bind(req.workout_log_group_id)
+        .bind(req.set_number)
+        .bind(req.rep_number_or_seconds)
+        .bind(req.weight)
+        .bind(req.description)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create core log: {}", e))?;
 
         Ok(result.last_insert_rowid() as u32)
     }
@@ -109,7 +109,7 @@ impl WorkoutLogRepo {
     }
 
     // TODO need to join exercises and core
-    pub async fn get_one_log<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn get_one_log<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         id: u32,
@@ -133,7 +133,7 @@ impl WorkoutLogRepo {
         })
     }
 
-    pub async fn paginate_logs<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn paginate_logs<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         pagination_params: PaginationParams,
@@ -145,7 +145,7 @@ impl WorkoutLogRepo {
 
 #[cfg(test)]
 mod tests {
-    use crate::db::{init_db, IN_MEMORY_DB_URL};
+    use crate::db::{IN_MEMORY_DB_URL, init_db};
     use crate::enums::{Band, Equipment};
     use crate::workout_log::workout_log_dto::WorkoutLogReq;
     use crate::workout_log::workout_log_repo::WorkoutLogRepo;
@@ -162,14 +162,14 @@ mod tests {
         let workout_id = sqlx::query(
             "INSERT INTO workouts (created_at, name, description, active) VALUES (?, ?, ?, ?)",
         )
-            .bind(chrono::Utc::now())
-            .bind("Test Workout")
-            .bind(Option::<String>::None)
-            .bind(true)
-            .execute(&mut **tx)
-            .await
-            .unwrap()
-            .last_insert_rowid() as u32;
+        .bind(chrono::Utc::now())
+        .bind("Test Workout")
+        .bind(Option::<String>::None)
+        .bind(true)
+        .execute(&mut **tx)
+        .await
+        .unwrap()
+        .last_insert_rowid() as u32;
 
         sqlx::query(
             r#"INSERT INTO workout_exercises (
@@ -178,22 +178,22 @@ mod tests {
                 rest_period_seconds, tempo, emom, equipments, bands, description
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
-            .bind(Utc::now())
-            .bind(workout_id)
-            .bind("A1")
-            .bind("Dummy Ex")
-            .bind(3u8)
-            .bind(10u8)
-            .bind(50u8)
-            .bind(60u8)
-            .bind("2010")
-            .bind(false)
-            .bind(sqlx::types::Json(vec![Equipment::Barbell]))
-            .bind(sqlx::types::Json(vec![Band::Yellow]))
-            .bind(Option::<String>::None)
-            .execute(&mut **tx)
-            .await
-            .unwrap();
+        .bind(Utc::now())
+        .bind(workout_id)
+        .bind("A1")
+        .bind("Dummy Ex")
+        .bind(3u8)
+        .bind(10u8)
+        .bind(50u8)
+        .bind(60u8)
+        .bind("2010")
+        .bind(false)
+        .bind(sqlx::types::Json(vec![Equipment::Barbell]))
+        .bind(sqlx::types::Json(vec![Band::Yellow]))
+        .bind(Option::<String>::None)
+        .execute(&mut **tx)
+        .await
+        .unwrap();
 
         let workout_exercise_id = 1u32; // first one
 

@@ -1,8 +1,8 @@
-// src/timer/rest_timer.rs
+use crate::timer::Timer;
 use crate::timer::audio_engine::{AudioBackend, AudioEngine};
 use std::time::{Duration, Instant};
 
-pub struct RestTimer {
+pub struct CountDownTimer {
     pub input_minutes: u32,
     pub input_seconds: u32,
     pub current_seconds: u32,
@@ -12,7 +12,7 @@ pub struct RestTimer {
     pub audio_engine: Box<dyn AudioBackend>,
 }
 
-impl RestTimer {
+impl CountDownTimer {
     pub fn new() -> Self {
         Self {
             input_minutes: 0,
@@ -39,6 +39,22 @@ impl RestTimer {
     }
 
     #[cfg(test)]
+    pub fn advance_seconds(&mut self, seconds: u32) {
+        if self.is_running {
+            if self.current_seconds > seconds {
+                self.current_seconds -= seconds;
+                // prevent immediate double-tick if real tick is called
+                self.last_tick = Some(Instant::now());
+            } else {
+                self.current_seconds = 0;
+                self.is_running = false;
+                self.last_tick = None;
+                self.audio_engine.play_sound(self.volume);
+            }
+        }
+    }
+
+    #[cfg(test)]
     pub fn set_duration(&mut self, minutes: u32, seconds: u32) {
         self.input_minutes = minutes;
         self.input_seconds = seconds;
@@ -47,7 +63,13 @@ impl RestTimer {
         self.last_tick = None;
     }
 
-    pub fn toggle(&mut self) {
+    pub fn minutes_and_seconds(&self) -> (u32, u32) {
+        (self.current_seconds / 60, self.current_seconds % 60)
+    }
+}
+
+impl Timer for CountDownTimer {
+    fn toggle(&mut self) {
         if self.is_running {
             self.is_running = false;
             self.last_tick = None;
@@ -63,7 +85,7 @@ impl RestTimer {
         }
     }
 
-    pub fn tick(&mut self) {
+    fn tick(&mut self) {
         if self.is_running {
             if let Some(last) = self.last_tick {
                 if last.elapsed() >= Duration::from_secs(1) {
@@ -83,7 +105,6 @@ impl RestTimer {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -92,7 +113,7 @@ mod tests {
     #[test]
     fn test_new_timer_not_running() {
         let recorder = AudioCallRecorder::default();
-        let timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
+        let timer = CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
 
         assert!(!timer.is_running);
         assert_eq!(timer.current_seconds, 0);
@@ -101,7 +122,7 @@ mod tests {
     #[test]
     fn test_toggle_starts_timer_with_duration() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
+        let mut timer = CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
         timer.set_duration(0, 5);
 
         timer.toggle();
@@ -113,7 +134,7 @@ mod tests {
     #[test]
     fn test_toggle_stops_timer() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
+        let mut timer = CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
         timer.set_duration(0, 5);
         timer.toggle(); // Start
         timer.toggle(); // Stop
@@ -125,7 +146,7 @@ mod tests {
     #[test]
     fn test_toggle_with_zero_duration_does_not_start() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
+        let mut timer = CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
         timer.set_duration(0, 0);
 
         timer.toggle();
@@ -137,7 +158,7 @@ mod tests {
     #[test]
     fn test_tick_decrements_seconds() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
+        let mut timer = CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
         timer.set_duration(0, 3);
         timer.toggle();
         timer.last_tick = Some(Instant::now() - Duration::from_secs(1));
@@ -151,7 +172,8 @@ mod tests {
     #[test]
     fn test_tick_plays_sound_when_timer_completes() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder.clone())));
+        let mut timer =
+            CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder.clone())));
         timer.set_duration(0, 1);
         timer.toggle();
         timer.last_tick = Some(Instant::now() - Duration::from_secs(2));
@@ -167,7 +189,8 @@ mod tests {
     #[test]
     fn test_tick_does_not_play_sound_before_completion() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder.clone())));
+        let mut timer =
+            CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder.clone())));
         timer.set_duration(0, 5);
         timer.toggle();
         timer.last_tick = Some(Instant::now() - Duration::from_secs(1));
@@ -182,7 +205,8 @@ mod tests {
     #[test]
     fn test_tick_respects_one_second_interval() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder.clone())));
+        let mut timer =
+            CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder.clone())));
         timer.set_duration(0, 5);
         timer.toggle();
         timer.last_tick = Some(Instant::now()); // Just now, not enough time elapsed
@@ -196,7 +220,7 @@ mod tests {
     #[test]
     fn test_set_duration_resets_timer() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
+        let mut timer = CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder)));
         timer.set_duration(0, 5);
         timer.toggle();
         timer.set_duration(1, 30);
@@ -210,7 +234,8 @@ mod tests {
     #[test]
     fn test_multiple_ticks_until_completion() {
         let recorder = AudioCallRecorder::default();
-        let mut timer = RestTimer::with_engine(Box::new(FakeAudioEngine::new(recorder.clone())));
+        let mut timer =
+            CountDownTimer::with_engine(Box::new(FakeAudioEngine::new(recorder.clone())));
         timer.set_duration(0, 3);
         timer.toggle();
 
