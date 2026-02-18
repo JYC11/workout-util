@@ -9,7 +9,6 @@ use crate::workout::workout_service::WorkoutService;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 use std::sync::mpsc::{Receiver, Sender, channel};
-use std::time::Duration;
 
 pub struct WorkoutsPage {
     service: WorkoutService,

@@ -10,12 +10,10 @@ use crate::exercise::exercise_dto::{
     exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name,
 };
 use crate::exercise::exercise_entity::ExerciseLibraryEntity;
-use crate::exercise::exercise_repo::ExerciseRepo;
 use crate::exercise::exercise_service::ExerciseService;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 use std::sync::mpsc::{Receiver, Sender, channel};
-use std::time::Duration;
 
 pub struct ExercisesPage {
     service: ExerciseService,

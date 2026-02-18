@@ -146,7 +146,7 @@ impl WorkoutLogRepo {
 #[cfg(test)]
 mod tests {
     use crate::db::{IN_MEMORY_DB_URL, init_db};
-    use crate::enums::{Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower};
+    use crate::enums::{Band, Equipment};
     use crate::workout_log::workout_log_dto::WorkoutLogReq;
     use crate::workout_log::workout_log_repo::WorkoutLogRepo;
     use chrono::Utc;
