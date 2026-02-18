@@ -174,45 +174,31 @@ mod tests {
     }
 
     // Helper: Create full core plan → core → workout_exercise chain
-    async fn create_workout_exercise(tx: &mut Transaction<'_, Sqlite>) -> (u32, u32, u32) {
+    async fn create_workout_exercise(tx: &mut Transaction<'_, Sqlite>) -> (u32, u32) {
         // (plan_id, workout_id, exercise_id)
-        let exercise_id = create_dummy_exercise(tx).await;
-
-        let plan_id = sqlx::query(
-            "INSERT INTO workout_plans (created_at, name, description, currently_using) VALUES (?, ?, ?, ?)"
-        )
-            .bind(chrono::Utc::now())
-            .bind("Test Plan")
-            .bind(Option::<String>::None)
-            .bind(false)
-            .execute(&mut **tx)
-            .await
-            .unwrap()
-            .last_insert_rowid() as u32;
-
         let workout_id = sqlx::query(
-            "INSERT INTO workouts (created_at, workout_plan_id, name, description) VALUES (?, ?, ?, ?)"
+            "INSERT INTO workouts (created_at, name, description, active) VALUES (?, ?, ?, ?)",
         )
-            .bind(chrono::Utc::now())
-            .bind(plan_id)
-            .bind("Test Workout")
-            .bind(Option::<String>::None)
-            .execute(&mut **tx)
-            .await
-            .unwrap()
-            .last_insert_rowid() as u32;
+        .bind(chrono::Utc::now())
+        .bind("Test Workout")
+        .bind(Option::<String>::None)
+        .bind(true)
+        .execute(&mut **tx)
+        .await
+        .unwrap()
+        .last_insert_rowid() as u32;
 
         sqlx::query(
             r#"INSERT INTO workout_exercises (
-                created_at, workout_id, exercise_id, code,
+                created_at, workout_id, code, name,
                 sets_target, reps_or_seconds_target, working_weight,
                 rest_period_seconds, tempo, emom, equipments, bands, description
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
-        .bind(chrono::Utc::now())
+        .bind(Utc::now())
         .bind(workout_id)
-        .bind(exercise_id)
         .bind("A1")
+        .bind("Dummy Ex")
         .bind(3u8)
         .bind(10u8)
         .bind(50u8)
@@ -228,7 +214,7 @@ mod tests {
 
         let workout_exercise_id = 1u32; // first one
 
-        (plan_id, workout_id, workout_exercise_id)
+        (workout_id, workout_exercise_id)
     }
 
     #[tokio::test]
@@ -275,7 +261,7 @@ mod tests {
         let mut tx = pool.begin().await.unwrap();
         let repository = WorkoutLogRepo::new();
 
-        let (_plan_id, workout_id, workout_exercise_id) = create_workout_exercise(&mut tx).await;
+        let (workout_id, workout_exercise_id) = create_workout_exercise(&mut tx).await;
 
         let today = Utc::now().naive_utc().date();
         let group_id = repository
@@ -328,7 +314,7 @@ mod tests {
         let mut tx = pool.begin().await.unwrap();
         let repository = WorkoutLogRepo::new();
 
-        let (_plan_id, workout_id, workout_exercise_id) = create_workout_exercise(&mut tx).await;
+        let (workout_id, workout_exercise_id) = create_workout_exercise(&mut tx).await;
         let today = Utc::now().naive_utc().date();
         let group_id = repository
             .create_log_group(&mut tx, today, None)

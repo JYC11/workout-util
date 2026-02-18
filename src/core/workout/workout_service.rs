@@ -1,4 +1,6 @@
-use crate::core::workout::workout_dto::{WorkoutExerciseReq, WorkoutReq};
+use crate::core::workout::workout_dto::{
+    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes,
+};
 use crate::core::workout::workout_repo::WorkoutRepo;
 use sqlx::{Pool, Sqlite};
 
@@ -80,14 +82,22 @@ impl WorkoutService {
         Ok(())
     }
 
-    pub async fn get_one(&self) -> Result<(), String> {
-        // TODO
-        Ok(())
+    pub async fn get_one(&self, id: u32) -> Result<WorkoutRes, String> {
+        Ok(self.repo.get_one_workout(&self.pool, id).await?)
     }
 
-    pub async fn get_all_exercises_by_workout_id(&self, workout_id: u32) -> Result<(), String> {
-        // TODO
-        Ok(())
+    pub async fn get_one_exercise(&self, id: u32) -> Result<WorkoutExerciseRes, String> {
+        Ok(self.repo.get_one_workout_exercise(&self.pool, id).await?)
+    }
+
+    pub async fn get_all_exercises_by_workout_id(
+        &self,
+        workout_id: u32,
+    ) -> Result<Vec<WorkoutExerciseRes>, String> {
+        Ok(self
+            .repo
+            .get_workout_exercises_by_workout_id(&self.pool, workout_id)
+            .await?)
     }
 
     pub async fn paginate(&self) -> Result<(), String> {

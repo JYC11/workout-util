@@ -1,4 +1,5 @@
 use crate::core::enums::{Band, Equipment};
+use crate::core::workout::workout_entity::WorkoutExerciseEntity;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutExerciseReq {
@@ -30,6 +31,25 @@ pub struct WorkoutExerciseRes {
     pub equipments: Vec<Equipment>,
     pub bands: Vec<Band>,
     pub description: Option<String>,
+}
+
+impl WorkoutExerciseRes {
+    pub fn from_entity(entity: WorkoutExerciseEntity) -> WorkoutExerciseRes {
+        Self {
+            id: entity.id,
+            workout_id: entity.workout_id,
+            name: entity.name,
+            code: entity.code,
+            sets_target: entity.sets_target,
+            reps_or_seconds_target: entity.reps_or_seconds_target,
+            working_weight: entity.working_weight,
+            rest_period_seconds: entity.rest_period_seconds,
+            tempo: entity.tempo,
+            equipments: entity.equipments.0,
+            bands: entity.bands.0,
+            description: entity.description,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

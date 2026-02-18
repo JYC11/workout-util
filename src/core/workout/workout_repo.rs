@@ -212,6 +212,26 @@ impl WorkoutRepo {
         Ok(())
     }
 
+    pub async fn get_workout_exercises_by_workout_id<'e, E: Executor<'e, Database = Sqlite>>(
+        &self,
+        executor: E,
+        workout_id: u32,
+    ) -> Result<Vec<WorkoutExerciseRes>, String> {
+        let rows: Vec<WorkoutExerciseEntity> =
+            sqlx::query_as("SELECT * FROM workout_exercises WHERE workout_id = ?")
+                .bind(workout_id)
+                .fetch_all(executor)
+                .await
+                .map_err(|e| format!("Database error: {}", e))?;
+
+        let res = rows
+            .iter()
+            .map(|row| Ok(WorkoutExerciseRes::from_entity(row.clone())))
+            .collect::<Result<Vec<WorkoutExerciseRes>, String>>()?;
+
+        Ok(res)
+    }
+
     pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
@@ -225,20 +245,7 @@ impl WorkoutRepo {
                 .map_err(|e| format!("Database error: {}", e))?
                 .ok_or_else(|| "Workout exercise not found".to_string())?;
 
-        Ok(WorkoutExerciseRes {
-            id: row.id,
-            workout_id: row.workout_id,
-            name: row.name,
-            code: row.code,
-            sets_target: row.sets_target,
-            reps_or_seconds_target: row.reps_or_seconds_target,
-            working_weight: row.working_weight,
-            rest_period_seconds: row.rest_period_seconds,
-            tempo: row.tempo,
-            equipments: row.equipments.0,
-            bands: row.bands.0,
-            description: row.description,
-        })
+        Ok(WorkoutExerciseRes::from_entity(row))
     }
 }
 
@@ -390,6 +397,20 @@ mod tests {
         assert_eq!(updated_ex.equipments, vec![Equipment::Dumbbells]);
         assert!(updated_ex.bands.is_empty());
         assert_eq!(updated_ex.description, None);
+
+        repository
+            .create_workout_exercise(
+                &mut tx,
+                mock_workout_exercise_req(workout_id, "B1", "Triceps extension"),
+            )
+            .await
+            .expect("Failed to create core exercise");
+
+        let found = repository
+            .get_workout_exercises_by_workout_id(&mut *tx, workout_id)
+            .await
+            .unwrap();
+        assert_eq!(found.len(), 2);
 
         // Delete
         repository
