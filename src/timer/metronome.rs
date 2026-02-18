@@ -2,7 +2,6 @@ use crate::timer::Timer;
 use crate::timer::audio_engine::{AudioBackend, AudioEngine};
 use std::time::{Duration, Instant};
 
-// timer
 pub struct Metronome {
     pub bpm: f64, // should be fixed to 60
     pub volume: f32,

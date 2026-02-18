@@ -7,7 +7,6 @@ use crate::workout::start_workout_page::StartWorkoutPage;
 use crate::workout_log::workout_logs_page::WorkoutLogsPage;
 use crate::workout_log::workouts_page::WorkoutsPage;
 use eframe::egui;
-use eframe::egui::Ui;
 use sqlx::{Pool, Sqlite};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -140,7 +139,7 @@ impl WorkoutUtil {
         });
     }
 
-    fn render_volume_slider(&mut self, ui: &mut Ui) {
+    fn render_volume_slider(&mut self, ui: &mut egui::Ui) {
         let mut volume: f32 = 10.0;
         ui.add(egui::Slider::new(&mut volume, 1.0..=50.0).text("Volume"));
         self.metronome.volume = volume;
@@ -149,7 +148,7 @@ impl WorkoutUtil {
         self.emom_timer.rest_timer.volume = volume;
     }
 
-    fn render_emom_timer(&mut self, ui: &mut Ui) {
+    fn render_emom_timer(&mut self, ui: &mut egui::Ui) {
         ui.label("EMOM Timer");
         ui.label("Rounds:");
         ui.add(egui::DragValue::new(&mut self.emom_timer.rounds).range(1..=100));
@@ -211,7 +210,7 @@ impl WorkoutUtil {
         }
     }
 
-    fn render_metronome(&mut self, ui: &mut Ui) {
+    fn render_metronome(&mut self, ui: &mut egui::Ui) {
         ui.label("Metronome");
         if ui
             .button(if self.metronome.is_running {
@@ -225,7 +224,7 @@ impl WorkoutUtil {
         }
     }
 
-    fn render_rest_timer(&mut self, ui: &mut Ui) {
+    fn render_rest_timer(&mut self, ui: &mut egui::Ui) {
         ui.label("Rest Timer");
         ui.add(
             egui::DragValue::new(&mut self.rest_timer.input_minutes)
