@@ -1,5 +1,5 @@
-use crate::app::PageAction;
-use crate::app::utils::CommonUiState;
+use crate::core::client::app::PageAction;
+use crate::core::client::app_utils::CommonUiState;
 use crate::core::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
     default_exercise_req, default_workout_req, exercise_res_to_req, workout_to_req,

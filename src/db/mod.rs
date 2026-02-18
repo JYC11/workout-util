@@ -4,6 +4,8 @@ use sqlx::migrate::MigrateDatabase;
 use sqlx::{Pool, Sqlite, SqlitePool};
 
 pub const DEFAULT_DB_URL: &str = "sqlite://data.db";
+
+#[cfg(test)]
 pub const IN_MEMORY_DB_URL: &str = "sqlite::memory:";
 
 async fn init_db_file(url: &str) {

@@ -1,5 +1,5 @@
-use crate::app::utils;
-use crate::app::utils::{CommonUiState, filter_combo};
+use crate::core::client::app_utils;
+use crate::core::client::app_utils::{CommonUiState, filter_combo};
 use crate::core::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
@@ -377,7 +377,7 @@ impl ExercisesPage {
         if is_upper {
             if is_compound {
                 ui.label("Push/Pull");
-                utils::combo_opt(
+                app_utils::combo_opt(
                     ui,
                     "push_pull",
                     &mut req.push_or_pull,
@@ -385,7 +385,7 @@ impl ExercisesPage {
                 );
 
                 ui.label("Straight/Bent Arm");
-                utils::combo_opt(
+                app_utils::combo_opt(
                     ui,
                     "str_bent",
                     &mut req.straight_or_bent,
@@ -393,7 +393,7 @@ impl ExercisesPage {
                 );
 
                 ui.label("Grip");
-                utils::combo_opt(
+                app_utils::combo_opt(
                     ui,
                     "grip",
                     &mut req.grip,
@@ -408,7 +408,7 @@ impl ExercisesPage {
                 );
 
                 ui.label("Grip Width");
-                utils::combo_opt(
+                app_utils::combo_opt(
                     ui,
                     "width",
                     &mut req.grip_width,
@@ -416,7 +416,7 @@ impl ExercisesPage {
                 );
 
                 ui.label("Lever Variation");
-                utils::combo_opt(
+                app_utils::combo_opt(
                     ui,
                     "lever",
                     &mut req.lever_variation,
@@ -432,7 +432,7 @@ impl ExercisesPage {
             } else {
                 // Upper Isolation
                 ui.label("Straight/Bent Arm");
-                utils::combo_opt(
+                app_utils::combo_opt(
                     ui,
                     "str_bent",
                     &mut req.straight_or_bent,
@@ -443,7 +443,7 @@ impl ExercisesPage {
             // Lower
             if is_compound {
                 ui.label("Squat/Hinge");
-                utils::combo_opt(
+                app_utils::combo_opt(
                     ui,
                     "sq_hinge",
                     &mut req.squat_or_hinge,

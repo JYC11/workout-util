@@ -1,13 +1,7 @@
-mod exercises_page;
-mod start_workout_page;
-mod utils;
-mod workout_logs_page;
-mod workouts_page;
-
-use crate::app::exercises_page::ExercisesPage;
-use crate::app::start_workout_page::StartWorkoutPage;
-use crate::app::workout_logs_page::WorkoutLogsPage;
-use crate::app::workouts_page::WorkoutsPage;
+use crate::core::exercise::exercises_page::ExercisesPage;
+use crate::core::workout::start_workout_page::StartWorkoutPage;
+use crate::core::workout_log::workout_logs_page::WorkoutLogsPage;
+use crate::core::workout_log::workouts_page::WorkoutsPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 

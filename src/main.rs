@@ -1,12 +1,10 @@
-use crate::app::WorkoutUtil;
+use self::core::client::app::WorkoutUtil;
 use crate::db::{DEFAULT_DB_URL, init_db};
 use eframe::egui;
 
-mod app;
 mod config;
 mod core;
 mod db;
-mod timer;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
