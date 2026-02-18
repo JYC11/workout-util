@@ -90,11 +90,9 @@ impl WorkoutUtil {
                 self.exercises_page.render_page(ctx, ui);
                 PageAction::None
             }
-            MainPageState::Workouts => {
-                self.workouts_page.render_page(ctx, ui)
-            }
+            MainPageState::Workouts => self.workouts_page.render_page(ctx, ui),
             MainPageState::StartWorkout => {
-                self.start_workout_page.render_page(ctx, ui, None);
+                self.start_workout_page.render_page(ctx, ui);
                 PageAction::None
             }
             MainPageState::WorkoutLogs => {
@@ -105,8 +103,7 @@ impl WorkoutUtil {
 
         match action {
             PageAction::GoToStartWorkout(workout_id) => {
-                self.start_workout_page
-                    .render_page(ctx, ui, Some(workout_id));
+                self.start_workout_page.load_workout(workout_id);
                 self.current_page = MainPageState::StartWorkout;
             }
             PageAction::None => {}

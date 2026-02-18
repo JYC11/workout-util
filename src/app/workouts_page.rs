@@ -375,6 +375,7 @@ impl WorkoutsPage {
     fn render_details_open_view(&mut self, ui: &mut egui::Ui) -> PageAction {
         ui.heading("Workout Details");
         ui.separator();
+        let mut page_action = PageAction::None;
 
         if let Some(w) = &self.current_workout {
             ui.label(egui::RichText::new(&w.name).strong().size(18.0));
@@ -405,6 +406,7 @@ impl WorkoutsPage {
         ui.horizontal(|ui| {
             if ui.button("Close").clicked() {
                 self.state = WorkoutsPageState::DetailsClosed;
+                page_action = PageAction::None
             }
             if ui.button("Edit").clicked() {
                 if let Some(w) = &self.current_workout {
@@ -412,10 +414,15 @@ impl WorkoutsPage {
                     self.state = WorkoutsPageState::DetailsEditView;
                     self.show_exercise_form = false;
                 }
+                page_action = PageAction::None;
+            }
+            if ui.button("Start Workout").clicked() {
+                page_action =
+                    PageAction::GoToStartWorkout(self.current_workout.as_ref().unwrap().id);
             }
         });
 
-        PageAction::None
+        page_action
     }
 
     fn render_details_edit_view(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
@@ -604,6 +611,8 @@ impl WorkoutsPage {
     }
 
     fn render_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
+        let mut page_action = PageAction::None;
+
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
             // Pagination controls
             ui.horizontal(|ui| {
@@ -692,6 +701,7 @@ impl WorkoutsPage {
                     Details(u32),
                     Edit(u32),
                     Delete(u32),
+                    StartWorkout(u32),
                 }
                 let mut action = None;
 
@@ -718,31 +728,40 @@ impl WorkoutsPage {
                                     if ui.button("Delete").clicked() {
                                         action = Some(ListAction::Delete(item.id));
                                     }
+                                    if ui.button("Start Workout").clicked() {
+                                        action = Some(ListAction::StartWorkout(item.id));
+                                    }
                                 });
                                 ui.end_row();
                             }
                         });
                 });
 
-                if let Some(act) = action {
+                page_action = if let Some(act) = action {
                     match act {
                         ListAction::Details(id) => {
                             self.fetch_detail(id);
                             self.state = WorkoutsPageState::DetailsOpenView;
+                            PageAction::None
                         }
                         ListAction::Edit(id) => {
                             self.fetch_detail(id);
                             self.state = WorkoutsPageState::DetailsEditView;
+                            PageAction::None
                         }
                         ListAction::Delete(id) => {
                             self.delete_workout_by_id(ctx, id);
+                            PageAction::None
                         }
+                        ListAction::StartWorkout(id) => PageAction::GoToStartWorkout(id),
                     }
-                }
+                } else {
+                    PageAction::None
+                };
             });
         });
 
-        PageAction::None
+        page_action
     }
 
     pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
