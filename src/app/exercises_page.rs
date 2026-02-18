@@ -4,11 +4,12 @@ use crate::core::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
-use crate::core::exercise::exercise::{ExerciseLibraryEntity, ExerciseRepo};
 use crate::core::exercise::exercise_dto::{
     ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ExerciseName, ValidExercise,
     exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name,
 };
+use crate::core::exercise::exercise_entity::ExerciseLibraryEntity;
+use crate::core::exercise::exercise_repo::ExerciseRepo;
 use crate::db::pagination_support::{PaginationRes, PaginationState};
 use eframe::egui;
 use sqlx::{Pool, Sqlite};

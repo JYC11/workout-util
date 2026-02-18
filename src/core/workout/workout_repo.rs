@@ -1,45 +1,11 @@
-use crate::core::enums::{Band, Equipment};
 use crate::core::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
 };
+use crate::core::workout::workout_entity::{WorkoutEntity, WorkoutExerciseEntity};
 use crate::db::pagination_support::PaginationParams;
-use chrono::{DateTime, Utc};
-use serde::Deserialize;
+use chrono::Utc;
 use sqlx::types::Json;
-use sqlx::{Executor, FromRow, Sqlite, Transaction};
-
-// mapped to a db row
-#[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow, Deserialize)]
-pub struct WorkoutExerciseEntity {
-    pub id: u32,
-    pub created_at: DateTime<Utc>, // should be some kinda DateTime
-    pub workout_id: u32,           // fk to Workout
-    pub name: String,
-    pub code: String, // A1, A2, B1, B2 ... input by user
-    pub sets_target: u8,
-    pub reps_or_seconds_target: u8,
-    pub working_weight: u16,
-    pub rest_period_seconds: u8,
-    pub tempo: String,
-    pub emom: bool,
-    pub equipments: Json<Vec<Equipment>>,
-    pub bands: Json<Vec<Band>>,
-    pub description: Option<String>,
-}
-// WorkoutEntity -> WorkoutExerciseEntity, 1:many
-// ExerciseLibraryEntry -> WorkoutExerciseEntity, 1:many
-
-// mapped to a db row
-#[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow, Deserialize)]
-pub struct WorkoutEntity {
-    pub id: u32,
-    pub created_at: DateTime<Utc>, // should be some kinda DateTime
-    pub name: String,
-    pub description: Option<String>,
-    pub active: bool,
-}
-
-// --- WORKOUT ---
+use sqlx::{Executor, Sqlite, Transaction};
 
 pub struct WorkoutRepo {}
 
@@ -277,9 +243,11 @@ impl WorkoutRepo {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::core::enums::{Band, Equipment};
+    use crate::core::workout::workout_dto::{WorkoutExerciseReq, WorkoutReq};
+    use crate::core::workout::workout_repo::WorkoutRepo;
     use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use chrono::Utc;
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {
