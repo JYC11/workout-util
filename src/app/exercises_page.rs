@@ -10,6 +10,7 @@ use crate::core::exercise::exercise_dto::{
 };
 use crate::core::exercise::exercise_entity::ExerciseLibraryEntity;
 use crate::core::exercise::exercise_repo::ExerciseRepo;
+use crate::core::exercise::exercise_service::ExerciseService;
 use crate::db::pagination_support::{PaginationRes, PaginationState};
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
@@ -17,7 +18,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::Duration;
 
 pub struct ExercisesPage {
-    pool: Pool<Sqlite>,
+    service: ExerciseService,
     state: ExercisesPageState,
     // Data
     list_items: Vec<ExerciseLibraryRes>,
@@ -47,7 +48,7 @@ impl ExercisesPage {
     pub fn default(pool: Pool<Sqlite>) -> Self {
         let (sender, receiver) = channel();
         Self {
-            pool,
+            service: ExerciseService::new(pool.clone(), ExerciseRepo::new()),
             state: ExercisesPageState::DetailsClosed,
             list_items: Vec::new(),
             current_detail: None,
@@ -116,19 +117,12 @@ impl ExercisesPage {
         self.common_ui_state.set_as_loading();
 
         let sender = self.sender.clone();
-        let pool = self.pool.clone();
         let filter = self.pagination_filters.clone();
         let params = self.pagination_state.to_pagination_params();
-
         let ctx = ctx.clone();
-
-        let repository = ExerciseRepo::new();
-
+        let service = self.service.clone();
         tokio::spawn(async move {
-            match repository
-                .paginate_exercises(&pool, Some(filter), params)
-                .await
-            {
+            match service.paginate(Some(filter), params).await {
                 Ok(res) => {
                     let _ = sender.send(ExercisesPageMsg::ListLoaded(res));
                 }
@@ -143,13 +137,10 @@ impl ExercisesPage {
     fn fetch_detail(&mut self, ctx: &egui::Context, id: u32) {
         self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
-        let pool = self.pool.clone();
         let ctx = ctx.clone();
-
-        let repository = ExerciseRepo::new();
-
+        let service = self.service.clone();
         tokio::spawn(async move {
-            match repository.get_one_exercise(&pool, id).await {
+            match service.get_one(id).await {
                 Ok(e) => {
                     let _ = sender.send(ExercisesPageMsg::DetailLoaded(e));
                 }
@@ -164,36 +155,22 @@ impl ExercisesPage {
     fn save_exercise(&mut self, ctx: &egui::Context) {
         self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
-        let pool = self.pool.clone();
         let req = self.form_data.clone();
         let is_edit = matches!(self.state, ExercisesPageState::DetailsEditView);
         let ctx = ctx.clone();
-
-        let repository = ExerciseRepo::new();
-
+        let service = self.service.clone();
         let id_opt = self.current_detail.as_ref().map(|d| get_exercise_id(d));
-
         tokio::spawn(async move {
-            let mut conn = match pool.begin().await {
-                Ok(c) => c,
-                Err(e) => {
-                    let _ = sender.send(ExercisesPageMsg::Error(e.to_string()));
-                    return;
-                }
-            };
-
             let res = if is_edit {
                 if let Some(id) = id_opt {
                     match ExerciseLibraryEntity::from_req(req) {
                         Ok(mut entity) => {
                             entity.id = id; // Set the ID
                             match entity.to_valid_struct() {
-                                Ok(valid) => {
-                                    match repository.update_exercise(&mut conn, valid).await {
-                                        Ok(_) => Ok(()),
-                                        Err(e) => Err(e),
-                                    }
-                                }
+                                Ok(valid) => match service.update(valid).await {
+                                    Ok(_) => Ok(()),
+                                    Err(e) => Err(e),
+                                },
                                 Err(e) => Err(e),
                             }
                         }
@@ -203,17 +180,12 @@ impl ExercisesPage {
                     Err("No ID found for edit".to_string())
                 }
             } else {
-                repository.create_exercise(&mut conn, req).await.map(|_| ())
+                service.create(req).await.map(|_| ())
             };
 
             match res {
                 Ok(_) => {
-                    if let Err(e) = conn.commit().await {
-                        let _ =
-                            sender.send(ExercisesPageMsg::Error(format!("Commit failed: {}", e)));
-                    } else {
-                        let _ = sender.send(ExercisesPageMsg::Saved);
-                    }
+                    let _ = sender.send(ExercisesPageMsg::Saved);
                 }
                 Err(e) => {
                     let _ = sender.send(ExercisesPageMsg::Error(e));
@@ -231,28 +203,12 @@ impl ExercisesPage {
         };
         self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
-        let pool = self.pool.clone();
         let ctx = ctx.clone();
-
-        let repository = ExerciseRepo::new();
-
+        let service = self.service.clone();
         tokio::spawn(async move {
-            let mut conn = match pool.begin().await {
-                Ok(c) => c,
-                Err(e) => {
-                    let _ = sender.send(ExercisesPageMsg::Error(e.to_string()));
-                    return;
-                }
-            };
-
-            match repository.delete_exercise(&mut conn, id).await {
+            match service.delete(id).await {
                 Ok(_) => {
-                    if let Err(e) = conn.commit().await {
-                        let _ =
-                            sender.send(ExercisesPageMsg::Error(format!("Commit failed: {}", e)));
-                    } else {
-                        let _ = sender.send(ExercisesPageMsg::Deleted);
-                    }
+                    let _ = sender.send(ExercisesPageMsg::Deleted);
                 }
                 Err(e) => {
                     let _ = sender.send(ExercisesPageMsg::Error(e));
@@ -740,8 +696,6 @@ impl ExercisesPage {
                         });
                 });
 
-                let repository = ExerciseRepo::new();
-
                 if let Some(act) = action {
                     match act {
                         ListAction::Details(id) => {
@@ -755,19 +709,11 @@ impl ExercisesPage {
                         ListAction::Delete(id) => {
                             self.common_ui_state.set_as_loading();
                             let sender = self.sender.clone();
-                            let pool = self.pool.clone();
+                            let service = self.service.clone();
                             tokio::spawn(async move {
-                                let mut conn = match pool.begin().await {
-                                    Ok(c) => c,
-                                    Err(e) => {
-                                        let _ = sender.send(ExercisesPageMsg::Error(e.to_string()));
-                                        return;
-                                    }
-                                };
-                                if let Err(e) = repository.delete_exercise(&mut conn, id).await {
+                                if let Err(e) = service.delete(id).await {
                                     let _ = sender.send(ExercisesPageMsg::Error(e));
                                 } else {
-                                    let _ = conn.commit().await;
                                     let _ = sender.send(ExercisesPageMsg::Deleted);
                                 }
                             });

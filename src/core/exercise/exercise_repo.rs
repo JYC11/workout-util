@@ -11,6 +11,7 @@ use crate::db::pagination_support::{
 };
 use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
 
+#[derive(Clone, Copy)]
 pub struct ExerciseRepo {}
 
 impl ExerciseRepo {
