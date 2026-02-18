@@ -21,6 +21,7 @@ pub struct PaginationRes<T> {
     pub prev_cursor: Option<u32>,
 }
 
+#[derive(Clone)]
 pub struct PaginationParams {
     pub limit: u32,
     pub cursor: Option<u32>,

@@ -1,4 +1,5 @@
 use crate::core::enums::{Band, Equipment};
+use crate::db::pagination_support::HasId;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::types::Json;
@@ -33,4 +34,10 @@ pub struct WorkoutEntity {
     pub name: String,
     pub description: Option<String>,
     pub active: bool,
+}
+
+impl HasId for WorkoutEntity {
+    fn id(&self) -> u32 {
+        self.id
+    }
 }

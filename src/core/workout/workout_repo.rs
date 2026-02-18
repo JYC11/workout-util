@@ -2,10 +2,12 @@ use crate::core::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
 };
 use crate::core::workout::workout_entity::{WorkoutEntity, WorkoutExerciseEntity};
-use crate::db::pagination_support::PaginationParams;
+use crate::db::pagination_support::{
+    PaginationParams, PaginationRes, get_cursors, keyset_paginate,
+};
 use chrono::Utc;
 use sqlx::types::Json;
-use sqlx::{Executor, Sqlite, Transaction};
+use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
 
 #[derive(Copy, Clone)]
 pub struct WorkoutRepo {}
@@ -98,22 +100,60 @@ impl WorkoutRepo {
             .map_err(|e| format!("Database error: {}", e))?
             .ok_or_else(|| "Workout not found".to_string())?;
 
-        Ok(WorkoutRes {
-            id: row.id,
-            name: row.name,
-            description: row.description,
-            active: row.active,
+        Ok(WorkoutRes::from_entity(row))
+    }
+
+    pub async fn paginate_workouts<'e, E: Executor<'e, Database = Sqlite>>(
+        &self,
+        executor: E,
+        pagination_filters: Option<WorkoutsFilterReq>,
+        pagination_params: PaginationParams,
+    ) -> Result<PaginationRes<WorkoutRes>, String> {
+        let mut qb = QueryBuilder::new("SELECT * FROM workouts WHERE 1=1");
+        self.pagination_filters(pagination_filters, &mut qb);
+        keyset_paginate(&pagination_params, &mut qb);
+
+        let mut rows: Vec<WorkoutEntity> = qb
+            .build_query_as()
+            .fetch_all(executor)
+            .await
+            .map_err(|e| format!("Failed to paginate workouts: {}", e))?;
+
+        let cursors = get_cursors(&pagination_params, &mut rows);
+
+        let items = rows
+            .iter()
+            .map(|row| Ok(WorkoutRes::from_entity(row.clone())))
+            .collect::<Result<Vec<WorkoutRes>, String>>()?;
+
+        Ok(PaginationRes {
+            items,
+            next_cursor: cursors.next_cursor,
+            prev_cursor: cursors.prev_cursor,
         })
     }
 
-    pub fn paginate_workouts<'e, E: Executor<'e, Database = Sqlite>>(
+    fn pagination_filters(
         &self,
-        executor: E,
-        pagination_filters: WorkoutsFilterReq,
-        pagination_params: PaginationParams,
-    ) -> Result<(), String> {
-        // TODO
-        Ok(())
+        filter_req: Option<WorkoutsFilterReq>,
+        qb: &mut QueryBuilder<Sqlite>,
+    ) {
+        if let Some(req) = filter_req {
+            if let Some(name) = req.name {
+                qb.push(" AND name LIKE ");
+                qb.push_bind(format!("%{}%", name));
+            }
+
+            if let Some(description) = req.description {
+                qb.push(" AND description LIKE ");
+                qb.push_bind(format!("%{}%", description));
+            }
+
+            if let Some(active) = req.active {
+                qb.push(" AND active = ");
+                qb.push_bind(active);
+            }
+        }
     }
 
     // --- WORKOUT EXERCISE ---
@@ -252,8 +292,9 @@ impl WorkoutRepo {
 #[cfg(test)]
 mod tests {
     use crate::core::enums::{Band, Equipment};
-    use crate::core::workout::workout_dto::{WorkoutExerciseReq, WorkoutReq};
+    use crate::core::workout::workout_dto::{WorkoutExerciseReq, WorkoutReq, WorkoutsFilterReq};
     use crate::core::workout::workout_repo::WorkoutRepo;
+    use crate::db::pagination_support::{PaginationDirection, PaginationParams};
     use crate::db::{IN_MEMORY_DB_URL, init_db};
     use chrono::Utc;
     use sqlx::SqlitePool;
@@ -335,6 +376,96 @@ mod tests {
                 .await
                 .is_err()
         );
+
+        tx.commit().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_pagination() {
+        let pool = setup_db().await;
+        let mut tx = pool.begin().await.unwrap();
+        let repository = WorkoutRepo::new();
+
+        // 1. Seed data: Create 5 workouts
+        // Names: "Workout A", "Workout B", "Workout C", "Hidden D", "Workout E"
+        for i in 0..5 {
+            let name = if i == 3 {
+                "Hidden D".to_string()
+            } else {
+                format!("Workout {}", (b'A' + i as u8) as char)
+            };
+
+            let mut req = mock_workout_req(&name);
+            if i == 3 {
+                req.active = false;
+            }
+            repository.create_workout(&mut tx, req).await.unwrap();
+        }
+
+        // 2. Test simple pagination (First 2 items)
+        let params = PaginationParams {
+            limit: 2,
+            cursor: None,
+            direction: PaginationDirection::Forward,
+        };
+        let res = repository
+            .paginate_workouts(&mut *tx, None, params)
+            .await
+            .expect("Pagination failed");
+
+        assert_eq!(res.items.len(), 2);
+        assert_eq!(res.items[0].name, "Workout A");
+        assert_eq!(res.items[1].name, "Workout B");
+        assert!(res.next_cursor.is_some());
+
+        // 3. Test next page (Next 2 items)
+        let params_page2 = PaginationParams {
+            limit: 2,
+            cursor: res.next_cursor,
+            direction: PaginationDirection::Forward,
+        };
+        let res_page2 = repository
+            .paginate_workouts(&mut *tx, None, params_page2)
+            .await
+            .expect("Pagination page 2 failed");
+
+        assert_eq!(res_page2.items.len(), 2);
+        assert_eq!(res_page2.items[0].name, "Workout C");
+        assert_eq!(res_page2.items[1].name, "Hidden D");
+
+        // 4. Test filtering (Active only)
+        let filter = WorkoutsFilterReq {
+            name: None,
+            description: None,
+            active: Some(true),
+        };
+        let params_all = PaginationParams {
+            limit: 10,
+            cursor: None,
+            direction: PaginationDirection::Forward,
+        };
+        let res_filtered = repository
+            .paginate_workouts(&mut *tx, Some(filter), params_all.clone())
+            .await
+            .expect("Filtered pagination failed");
+
+        // Should be 4 items (A, B, C, E), excluding Hidden D
+        assert_eq!(res_filtered.items.len(), 4);
+        assert!(res_filtered.items.iter().all(|w| w.active));
+
+        // 5. Test filtering by name
+        let name_filter = WorkoutsFilterReq {
+            name: Some("Hidden".to_string()),
+            description: None,
+            active: None,
+        };
+        let res_name = repository
+            .paginate_workouts(&mut *tx, Some(name_filter), params_all.clone())
+            .await
+            .expect("Name filter failed");
+
+        assert_eq!(res_name.items.len(), 1);
+        assert_eq!(res_name.items[0].name, "Hidden D");
 
         tx.commit().await.unwrap();
     }

@@ -1,5 +1,5 @@
 use crate::core::enums::{Band, Equipment};
-use crate::core::workout::workout_entity::WorkoutExerciseEntity;
+use crate::core::workout::workout_entity::{WorkoutEntity, WorkoutExerciseEntity};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutExerciseReq {
@@ -65,6 +65,17 @@ pub struct WorkoutRes {
     pub name: String,
     pub description: Option<String>,
     pub active: bool,
+}
+
+impl WorkoutRes {
+    pub fn from_entity(workout_entity: WorkoutEntity) -> WorkoutRes {
+        Self {
+            id: workout_entity.id,
+            name: workout_entity.name,
+            description: workout_entity.description,
+            active: workout_entity.active,
+        }
+    }
 }
 
 #[derive(Clone)]

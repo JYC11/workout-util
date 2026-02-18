@@ -1,7 +1,8 @@
 use crate::core::workout::workout_dto::{
-    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes,
+    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
 };
 use crate::core::workout::workout_repo::WorkoutRepo;
+use crate::db::pagination_support::{PaginationParams, PaginationRes};
 use sqlx::{Pool, Sqlite};
 
 #[derive(Clone)]
@@ -100,8 +101,14 @@ impl WorkoutService {
             .await?)
     }
 
-    pub async fn paginate(&self) -> Result<(), String> {
-        // TODO
-        Ok(())
+    pub async fn paginate(
+        &self,
+        pagination_filters: Option<WorkoutsFilterReq>,
+        pagination_params: PaginationParams,
+    ) -> Result<PaginationRes<WorkoutRes>, String> {
+        Ok(self
+            .repo
+            .paginate_workouts(&self.pool, pagination_filters, pagination_params)
+            .await?)
     }
 }
