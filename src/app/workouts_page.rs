@@ -1,5 +1,5 @@
-use crate::app::utils::{self, CommonUiState, filter_combo};
-use crate::core::enums::{Band, Equipment};
+use crate::app::PageAction;
+use crate::app::utils::CommonUiState;
 use crate::core::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
     default_exercise_req, default_workout_req, exercise_res_to_req, workout_to_req,
@@ -309,17 +309,13 @@ impl WorkoutsPage {
 
     fn render_exercise_form(&mut self, ui: &mut egui::Ui) {
         let req = &mut self.form_exercise;
+        ui.label("Code (e.g. A1)");
+        ui.text_edit_singleline(&mut req.code);
+        ui.label("Name");
+        ui.text_edit_singleline(&mut req.name);
         egui::Grid::new("exercise_form_grid")
             .striped(true)
             .show(ui, |ui| {
-                ui.label("Code (e.g. A1)");
-                ui.text_edit_singleline(&mut req.code);
-                ui.end_row();
-
-                ui.label("Name");
-                ui.add(egui::TextEdit::singleline(&mut req.name).desired_width(300.0));
-                ui.end_row();
-
                 ui.label("Sets");
                 ui.add(egui::DragValue::new(&mut req.sets_target));
                 ui.end_row();
@@ -335,14 +331,11 @@ impl WorkoutsPage {
                 ui.label("Rest (s)");
                 ui.add(egui::DragValue::new(&mut req.rest_period_seconds));
                 ui.end_row();
-
-                ui.label("Tempo");
-                ui.text_edit_singleline(&mut req.tempo);
-                ui.end_row();
             });
 
+        ui.label("Tempo");
+        ui.text_edit_singleline(&mut req.tempo);
         ui.checkbox(&mut req.emom, "EMOM");
-
         ui.label("Description");
         let mut desc = req.description.clone().unwrap_or_default();
         ui.text_edit_multiline(&mut desc);
@@ -361,7 +354,7 @@ impl WorkoutsPage {
         ui.checkbox(&mut self.form_workout.active, "Active");
     }
 
-    fn render_details_open_view(&mut self, ui: &mut egui::Ui) {
+    fn render_details_open_view(&mut self, ui: &mut egui::Ui) -> PageAction {
         ui.heading("Workout Details");
         ui.separator();
 
@@ -403,26 +396,13 @@ impl WorkoutsPage {
                 }
             }
         });
+
+        PageAction::None
     }
 
-    fn render_details_edit_view(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        if self.show_exercise_form {
-            ui.heading(if self.editing_exercise_id.is_some() {
-                "Edit Exercise"
-            } else {
-                "Add Exercise"
-            });
-            self.render_exercise_form(ui);
-            ui.horizontal(|ui| {
-                if ui.button("Cancel").clicked() {
-                    self.show_exercise_form = false;
-                }
-                if ui.button("Save Exercise").clicked() {
-                    self.save_exercise(ctx);
-                }
-            });
-            ui.separator();
-            return; // Focus on exercise form
+    fn render_details_edit_view(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
+        if let Some(value) = self.show_exercise_sub_form(ctx, ui) {
+            return value;
         }
 
         ui.heading("Edit Workout");
@@ -499,26 +479,13 @@ impl WorkoutsPage {
                 self.delete_workout(ctx);
             }
         });
+
+        PageAction::None
     }
 
-    fn render_create(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        if self.show_exercise_form {
-            ui.heading(if self.editing_exercise_id.is_some() {
-                "Edit Exercise (New)"
-            } else {
-                "Add Exercise (New)"
-            });
-            self.render_exercise_form(ui);
-            ui.horizontal(|ui| {
-                if ui.button("Cancel").clicked() {
-                    self.show_exercise_form = false;
-                }
-                if ui.button("Save Exercise").clicked() {
-                    self.save_exercise(ctx);
-                }
-            });
-            ui.separator();
-            return;
+    fn render_create(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
+        if let Some(value) = self.show_exercise_sub_form(ctx, ui) {
+            return value;
         }
 
         ui.heading("Create New Workout");
@@ -588,9 +555,37 @@ impl WorkoutsPage {
                 self.save_workout(ctx);
             }
         });
+
+        PageAction::None
     }
 
-    fn render_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+    fn show_exercise_sub_form(
+        &mut self,
+        ctx: &egui::Context,
+        ui: &mut egui::Ui,
+    ) -> Option<PageAction> {
+        if self.show_exercise_form {
+            ui.heading(if self.editing_exercise_id.is_some() {
+                "Edit Exercise (New)"
+            } else {
+                "Add Exercise (New)"
+            });
+            self.render_exercise_form(ui);
+            ui.horizontal(|ui| {
+                if ui.button("Cancel").clicked() {
+                    self.show_exercise_form = false;
+                }
+                if ui.button("Save Exercise").clicked() {
+                    self.save_exercise(ctx);
+                }
+            });
+            ui.separator();
+            return Some(PageAction::None);
+        }
+        None
+    }
+
+    fn render_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
             // Pagination controls
             ui.horizontal(|ui| {
@@ -734,9 +729,11 @@ impl WorkoutsPage {
                 }
             });
         });
+
+        PageAction::None
     }
 
-    pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+    pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
         self.handle_async_messages();
 
         if let Some((msg, time)) = &self.common_ui_state.error_message {

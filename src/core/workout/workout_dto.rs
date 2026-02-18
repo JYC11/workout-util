@@ -114,7 +114,7 @@ pub fn default_exercise_req(workout_id: u32) -> WorkoutExerciseReq {
         reps_or_seconds_target: 10,
         working_weight: 0,
         rest_period_seconds: 60,
-        tempo: String::new(),
+        tempo: "0000".to_string(),
         emom: false,
         equipments: vec![],
         bands: vec![],

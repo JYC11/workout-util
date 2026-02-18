@@ -20,6 +20,11 @@ pub enum MainPageState {
     WorkoutLogs,
 }
 
+pub enum PageAction {
+    None,
+    GoToStartWorkout(u32),
+}
+
 pub struct WorkoutUtil {
     pool: Pool<Sqlite>,
     current_page: MainPageState,
@@ -76,12 +81,36 @@ impl WorkoutUtil {
     }
 
     fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        match self.current_page {
-            MainPageState::Home => self.render_home(ctx, ui),
-            MainPageState::Exercises => self.exercises_page.render_page(ctx, ui),
-            MainPageState::Workouts => self.workouts_page.render_page(ctx, ui),
-            MainPageState::StartWorkout => self.start_workout_page.render_page(ctx, ui),
-            MainPageState::WorkoutLogs => self.workout_logs_page.render_page(ctx, ui),
+        let action = match self.current_page {
+            MainPageState::Home => {
+                self.render_home(ctx, ui);
+                PageAction::None
+            }
+            MainPageState::Exercises => {
+                self.exercises_page.render_page(ctx, ui);
+                PageAction::None
+            }
+            MainPageState::Workouts => {
+                self.workouts_page.render_page(ctx, ui);
+                PageAction::None
+            }
+            MainPageState::StartWorkout => {
+                self.start_workout_page.render_page(ctx, ui, None);
+                PageAction::None
+            }
+            MainPageState::WorkoutLogs => {
+                self.workout_logs_page.render_page(ctx, ui);
+                PageAction::None
+            }
+        };
+
+        match action {
+            PageAction::GoToStartWorkout(workout_id) => {
+                self.start_workout_page
+                    .render_page(ctx, ui, Some(workout_id));
+                self.current_page = MainPageState::StartWorkout;
+            }
+            PageAction::None => {}
         }
     }
 
