@@ -37,7 +37,7 @@ impl WorkoutUtil {
             exercises_page: ExercisesPage::default(pool.clone()),
             workouts_page: WorkoutsPage::default(pool.clone()),
             start_workout_page: StartWorkoutPage::default(pool.clone()),
-            workout_logs_page: WorkoutLogsPage::default(pool),
+            workout_logs_page: WorkoutLogsPage::default(pool.clone()),
         }
     }
 
