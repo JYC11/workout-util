@@ -156,24 +156,7 @@ mod tests {
         init_db(IN_MEMORY_DB_URL).await
     }
 
-    // Helper: Create minimal exercise for FK
-    async fn create_dummy_exercise(tx: &mut Transaction<'_, Sqlite>) -> u32 {
-        sqlx::query(
-            r#"INSERT INTO exercise_library (
-                name, dynamic_or_static, upper_or_lower, compound_or_isolation
-            ) VALUES (?, ?, ?, ?)"#,
-        )
-        .bind("Dummy Ex")
-        .bind(DynamicOrStatic::Dynamic)
-        .bind(UpperOrLower::Upper)
-        .bind(CompoundOrIsolation::Compound)
-        .execute(&mut **tx)
-        .await
-        .unwrap();
-        1 // first auto-increment ID
-    }
-
-    // Helper: Create full core plan → core → workout_exercise chain
+    // Helper: Create dummy data
     async fn create_workout_exercise(tx: &mut Transaction<'_, Sqlite>) -> (u32, u32) {
         // (plan_id, workout_id, exercise_id)
         let workout_id = sqlx::query(

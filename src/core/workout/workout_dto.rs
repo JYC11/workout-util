@@ -28,6 +28,7 @@ pub struct WorkoutExerciseRes {
     pub working_weight: u16,
     pub rest_period_seconds: u8,
     pub tempo: String,
+    pub emom: bool,
     pub equipments: Vec<Equipment>,
     pub bands: Vec<Band>,
     pub description: Option<String>,
@@ -45,6 +46,7 @@ impl WorkoutExerciseRes {
             working_weight: entity.working_weight,
             rest_period_seconds: entity.rest_period_seconds,
             tempo: entity.tempo,
+            emom: entity.emom,
             equipments: entity.equipments.0,
             bands: entity.bands.0,
             description: entity.description,
@@ -92,5 +94,55 @@ impl Default for WorkoutsFilterReq {
             description: None,
             active: None,
         }
+    }
+}
+
+pub fn default_workout_req() -> WorkoutReq {
+    WorkoutReq {
+        name: String::new(),
+        description: None,
+        active: true,
+    }
+}
+
+pub fn default_exercise_req(workout_id: u32) -> WorkoutExerciseReq {
+    WorkoutExerciseReq {
+        workout_id,
+        name: String::new(),
+        code: String::new(),
+        sets_target: 3,
+        reps_or_seconds_target: 10,
+        working_weight: 0,
+        rest_period_seconds: 60,
+        tempo: String::new(),
+        emom: false,
+        equipments: vec![],
+        bands: vec![],
+        description: None,
+    }
+}
+
+pub fn workout_to_req(res: &WorkoutRes) -> WorkoutReq {
+    WorkoutReq {
+        name: res.name.clone(),
+        description: res.description.clone(),
+        active: res.active,
+    }
+}
+
+pub fn exercise_res_to_req(res: &WorkoutExerciseRes) -> WorkoutExerciseReq {
+    WorkoutExerciseReq {
+        workout_id: res.workout_id,
+        name: res.name.clone(),
+        code: res.code.clone(),
+        sets_target: res.sets_target,
+        reps_or_seconds_target: res.reps_or_seconds_target,
+        working_weight: res.working_weight,
+        rest_period_seconds: res.rest_period_seconds,
+        tempo: res.tempo.clone(),
+        emom: false,
+        equipments: res.equipments.clone(),
+        bands: res.bands.clone(),
+        description: res.description.clone(),
     }
 }

@@ -73,6 +73,28 @@ impl WorkoutService {
         Ok(())
     }
 
+    pub async fn create_exercise(&self, req: WorkoutExerciseReq) -> Result<(), String> {
+        let mut conn = match self.pool.begin().await {
+            Ok(conn) => conn,
+            Err(e) => return Err(e.to_string()),
+        };
+        self.repo.create_workout_exercise(&mut conn, req).await?;
+        conn.commit().await.unwrap();
+        Ok(())
+    }
+
+    pub async fn update_exercise(&self, id: u32, req: WorkoutExerciseReq) -> Result<(), String> {
+        let mut conn = match self.pool.begin().await {
+            Ok(conn) => conn,
+            Err(e) => return Err(e.to_string()),
+        };
+        self.repo
+            .update_workout_exercise(&mut conn, id, req)
+            .await?;
+        conn.commit().await.unwrap();
+        Ok(())
+    }
+
     pub async fn delete_exercise(&self, id: u32) -> Result<(), String> {
         let mut conn = match self.pool.begin().await {
             Ok(conn) => conn,
