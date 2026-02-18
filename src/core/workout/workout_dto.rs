@@ -1,4 +1,4 @@
-use crate::workout::enums::{Band, Equipment};
+use crate::core::enums::{Band, Equipment};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutExerciseReq {

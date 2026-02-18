@@ -1,9 +1,9 @@
 use crate::app::utils::CommonUiState;
+use crate::core::workout::workout_dto::WorkoutsFilterReq;
 use crate::db::pagination_support::PaginationState;
-use crate::workout::workout_dto::WorkoutsFilterReq;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct WorkoutsPage {
     pool: Pool<Sqlite>,
@@ -75,25 +75,25 @@ impl WorkoutsPage {
     fn handle_async_messages(&mut self) {}
 
     fn render_workout_exercise_form(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        // for editing the exercise code, sets, reps, weight, etc. of an exercise in a workout
+        // for editing the exercise code, sets, reps, weight, etc. of an exercise in a core
     }
 
     fn render_workout_builder_form(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        // the main form for building a workout, with the exercise list and the exercise forms
+        // the main form for building a core, with the exercise list and the exercise forms
         // should be able to add exercises from the list, remove exercises.
     }
 
     fn render_workout_details_open_view(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        // the details view for a workout, showing the exercises and their details
+        // the details view for a core, showing the exercises and their details
     }
 
     fn render_workout_details_edit_view(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        // the details view for a workout, showing the exercises and their details at editable state
+        // the details view for a core, showing the exercises and their details at editable state
     }
 
     fn render_workouts_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
-        // render the list of workouts, with a button to create a new workout,
-        // a button to edit the selected workout and a button to delete the workout
+        // render the list of workouts, with a button to create a new core,
+        // a button to edit the selected core and a button to delete the core
     }
 
     pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {

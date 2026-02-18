@@ -1,8 +1,8 @@
-use crate::db::pagination_support::PaginationParams;
-use crate::workout::enums::{Band, Equipment};
-use crate::workout::workout_dto::{
+use crate::core::enums::{Band, Equipment};
+use crate::core::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
 };
+use crate::db::pagination_support::PaginationParams;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use sqlx::types::Json;
@@ -15,7 +15,7 @@ pub struct WorkoutExerciseEntity {
     pub created_at: DateTime<Utc>, // should be some kinda DateTime
     pub workout_id: u32,           // fk to Workout
     pub name: String,
-    pub code: String,              // A1, A2, B1, B2 ... input by user
+    pub code: String, // A1, A2, B1, B2 ... input by user
     pub sets_target: u8,
     pub reps_or_seconds_target: u8,
     pub working_weight: u16,
@@ -61,13 +61,13 @@ impl WorkoutRepo {
         VALUES (?, ?, ?, ?)
         "#,
         )
-            .bind(created_at)
-            .bind(&req.name)
-            .bind(&req.description)
-            .bind(&req.active)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to create workout: {}", e))?;
+        .bind(created_at)
+        .bind(&req.name)
+        .bind(&req.description)
+        .bind(&req.active)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create core: {}", e))?;
 
         let id = result.last_insert_rowid() as u32;
         Ok(id)
@@ -86,13 +86,13 @@ impl WorkoutRepo {
         WHERE id = ?
         "#,
         )
-            .bind(&req.name)
-            .bind(&req.description)
-            .bind(&req.active)
-            .bind(id)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to update workout: {}", e))?;
+        .bind(&req.name)
+        .bind(&req.description)
+        .bind(&req.active)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update core: {}", e))?;
 
         if result.rows_affected() == 0 {
             return Err("Workout not found".to_string());
@@ -101,12 +101,16 @@ impl WorkoutRepo {
         Ok(())
     }
 
-    pub async fn delete_workout(&self, tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result<(), String> {
+    pub async fn delete_workout(
+        &self,
+        tx: &mut Transaction<'_, Sqlite>,
+        id: u32,
+    ) -> Result<(), String> {
         let result = sqlx::query("DELETE FROM workouts WHERE id = ?")
             .bind(id)
             .execute(&mut **tx)
             .await
-            .map_err(|e| format!("Failed to delete workout (may be in use): {}", e))?;
+            .map_err(|e| format!("Failed to delete core (may be in use): {}", e))?;
 
         if result.rows_affected() == 0 {
             return Err("Workout not found".to_string());
@@ -115,7 +119,7 @@ impl WorkoutRepo {
         Ok(())
     }
 
-    pub async fn get_one_workout<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         id: u32,
@@ -135,7 +139,7 @@ impl WorkoutRepo {
         })
     }
 
-    pub fn paginate_workouts<'e, E: Executor<'e, Database=Sqlite>>(
+    pub fn paginate_workouts<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         pagination_filters: WorkoutsFilterReq,
@@ -162,22 +166,22 @@ impl WorkoutRepo {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
         )
-            .bind(created_at)
-            .bind(req.workout_id)
-            .bind(&req.name)
-            .bind(&req.code)
-            .bind(req.sets_target)
-            .bind(req.reps_or_seconds_target)
-            .bind(req.working_weight)
-            .bind(req.rest_period_seconds)
-            .bind(&req.tempo)
-            .bind(&req.emom)
-            .bind(Json(req.equipments))
-            .bind(Json(req.bands))
-            .bind(&req.description)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to create workout exercise: {}", e))?;
+        .bind(created_at)
+        .bind(req.workout_id)
+        .bind(&req.name)
+        .bind(&req.code)
+        .bind(req.sets_target)
+        .bind(req.reps_or_seconds_target)
+        .bind(req.working_weight)
+        .bind(req.rest_period_seconds)
+        .bind(&req.tempo)
+        .bind(&req.emom)
+        .bind(Json(req.equipments))
+        .bind(Json(req.bands))
+        .bind(&req.description)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create core exercise: {}", e))?;
 
         let id = result.last_insert_rowid() as u32;
         Ok(id)
@@ -199,22 +203,22 @@ impl WorkoutRepo {
         WHERE id = ?
         "#,
         )
-            .bind(req.workout_id)
-            .bind(&req.code)
-            .bind(&req.name)
-            .bind(req.sets_target)
-            .bind(req.reps_or_seconds_target)
-            .bind(req.working_weight)
-            .bind(req.rest_period_seconds)
-            .bind(&req.tempo)
-            .bind(req.emom)
-            .bind(Json(req.equipments))
-            .bind(Json(req.bands))
-            .bind(&req.description)
-            .bind(id)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to update workout exercise: {}", e))?;
+        .bind(req.workout_id)
+        .bind(&req.code)
+        .bind(&req.name)
+        .bind(req.sets_target)
+        .bind(req.reps_or_seconds_target)
+        .bind(req.working_weight)
+        .bind(req.rest_period_seconds)
+        .bind(&req.tempo)
+        .bind(req.emom)
+        .bind(Json(req.equipments))
+        .bind(Json(req.bands))
+        .bind(&req.description)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update core exercise: {}", e))?;
 
         if result.rows_affected() == 0 {
             return Err("Workout exercise not found".to_string());
@@ -232,7 +236,7 @@ impl WorkoutRepo {
             .bind(id)
             .execute(&mut **tx)
             .await
-            .map_err(|e| format!("Failed to delete workout exercise (may be in use): {}", e))?;
+            .map_err(|e| format!("Failed to delete core exercise (may be in use): {}", e))?;
 
         if result.rows_affected() == 0 {
             return Err("Workout exercise not found".to_string());
@@ -241,17 +245,18 @@ impl WorkoutRepo {
         Ok(())
     }
 
-    pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         id: u32,
     ) -> Result<WorkoutExerciseRes, String> {
-        let row: WorkoutExerciseEntity = sqlx::query_as("SELECT * FROM workout_exercises WHERE id = ?")
-            .bind(id)
-            .fetch_optional(executor)
-            .await
-            .map_err(|e| format!("Database error: {}", e))?
-            .ok_or_else(|| "Workout exercise not found".to_string())?;
+        let row: WorkoutExerciseEntity =
+            sqlx::query_as("SELECT * FROM workout_exercises WHERE id = ?")
+                .bind(id)
+                .fetch_optional(executor)
+                .await
+                .map_err(|e| format!("Database error: {}", e))?
+                .ok_or_else(|| "Workout exercise not found".to_string())?;
 
         Ok(WorkoutExerciseRes {
             id: row.id,
@@ -273,8 +278,8 @@ impl WorkoutRepo {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::{init_db, IN_MEMORY_DB_URL};
-    use crate::workout::enums::{Band, Equipment};
+    use crate::core::enums::{Band, Equipment};
+    use crate::db::{IN_MEMORY_DB_URL, init_db};
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {
@@ -289,11 +294,7 @@ mod tests {
         }
     }
 
-    fn mock_workout_exercise_req(
-        workout_id: u32,
-        code: &str,
-        name: &str,
-    ) -> WorkoutExerciseReq {
+    fn mock_workout_exercise_req(workout_id: u32, code: &str, name: &str) -> WorkoutExerciseReq {
         WorkoutExerciseReq {
             workout_id,
             code: code.to_string(),
@@ -317,37 +318,47 @@ mod tests {
         let pool = setup_db().await;
         let mut tx = pool.begin().await.unwrap();
         let repository = WorkoutRepo::new();
-        
-        // Create workout
-        let workout_id = repository.create_workout(&mut tx, mock_workout_req("Upper Body A"))
+
+        // Create core
+        let workout_id = repository
+            .create_workout(&mut tx, mock_workout_req("Upper Body A"))
             .await
-            .expect("Failed to create workout");
+            .expect("Failed to create core");
 
         // Get
-        let workout = repository.get_one_workout(&mut *tx, workout_id)
+        let workout = repository
+            .get_one_workout(&mut *tx, workout_id)
             .await
-            .expect("Failed to get workout");
+            .expect("Failed to get core");
         assert_eq!(workout.name, "Upper Body A");
 
         // Update
         let mut updated_req = mock_workout_req("Lower Body A");
         updated_req.description = Some("Leg day!".to_string());
-        repository.update_workout(&mut tx, workout_id, updated_req)
+        repository
+            .update_workout(&mut tx, workout_id, updated_req)
             .await
-            .expect("Failed to update workout");
+            .expect("Failed to update core");
 
-        let updated_workout = repository.get_one_workout(&mut *tx, workout_id)
+        let updated_workout = repository
+            .get_one_workout(&mut *tx, workout_id)
             .await
-            .expect("Failed to get updated workout");
+            .expect("Failed to get updated core");
         assert_eq!(updated_workout.name, "Lower Body A");
         assert_eq!(updated_workout.description, Some("Leg day!".to_string()));
 
         // Delete
-        repository.delete_workout(&mut tx, workout_id)
+        repository
+            .delete_workout(&mut tx, workout_id)
             .await
-            .expect("Failed to delete workout");
+            .expect("Failed to delete core");
 
-        assert!(repository.get_one_workout(&mut *tx, workout_id).await.is_err());
+        assert!(
+            repository
+                .get_one_workout(&mut *tx, workout_id)
+                .await
+                .is_err()
+        );
 
         tx.commit().await.unwrap();
     }
@@ -361,22 +372,25 @@ mod tests {
         let repository = WorkoutRepo::new();
 
         // Setup dependencies
-        let workout_id = repository.create_workout(&mut tx, mock_workout_req("Test Workout"))
+        let workout_id = repository
+            .create_workout(&mut tx, mock_workout_req("Test Workout"))
             .await
             .unwrap();
 
         // Create
-        let ex_id = repository.create_workout_exercise(
-            &mut tx,
-            mock_workout_exercise_req(workout_id, "A1", "Pushups"),
-        )
+        let ex_id = repository
+            .create_workout_exercise(
+                &mut tx,
+                mock_workout_exercise_req(workout_id, "A1", "Pushups"),
+            )
             .await
-            .expect("Failed to create workout exercise");
+            .expect("Failed to create core exercise");
 
         // Get
-        let ex = repository.get_one_workout_exercise(&mut *tx, ex_id)
+        let ex = repository
+            .get_one_workout_exercise(&mut *tx, ex_id)
             .await
-            .expect("Failed to get workout exercise");
+            .expect("Failed to get core exercise");
         assert_eq!(ex.code, "A1");
         assert_eq!(ex.workout_id, workout_id);
         assert_eq!(ex.equipments, vec![Equipment::Barbell]);
@@ -391,11 +405,13 @@ mod tests {
         updated_req.bands = vec![];
         updated_req.description = None;
 
-        repository.update_workout_exercise(&mut tx, ex_id, updated_req)
+        repository
+            .update_workout_exercise(&mut tx, ex_id, updated_req)
             .await
-            .expect("Failed to update workout exercise");
+            .expect("Failed to update core exercise");
 
-        let updated_ex = repository.get_one_workout_exercise(&mut *tx, ex_id)
+        let updated_ex = repository
+            .get_one_workout_exercise(&mut *tx, ex_id)
             .await
             .expect("Failed to get updated exercise");
         assert_eq!(updated_ex.code, "A2");
@@ -407,11 +423,17 @@ mod tests {
         assert_eq!(updated_ex.description, None);
 
         // Delete
-        repository.delete_workout_exercise(&mut tx, ex_id)
+        repository
+            .delete_workout_exercise(&mut tx, ex_id)
             .await
-            .expect("Failed to delete workout exercise");
+            .expect("Failed to delete core exercise");
 
-        assert!(repository.get_one_workout_exercise(&mut *tx, ex_id).await.is_err());
+        assert!(
+            repository
+                .get_one_workout_exercise(&mut *tx, ex_id)
+                .await
+                .is_err()
+        );
 
         tx.commit().await.unwrap();
     }
@@ -424,7 +446,8 @@ mod tests {
         let mut tx = pool.begin().await.unwrap();
         let repository = WorkoutRepo::new();
 
-        let workout_id = repository.create_workout(&mut tx, mock_workout_req("Protected Workout"))
+        let workout_id = repository
+            .create_workout(&mut tx, mock_workout_req("Protected Workout"))
             .await
             .unwrap();
 
@@ -437,12 +460,13 @@ mod tests {
             .await
             .unwrap();
 
-        // Create a workout exercise → now workout is referenced
-        repository.create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1", "Pushups"))
+        // Create a core exercise → now core is referenced
+        repository
+            .create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1", "Pushups"))
             .await
             .unwrap();
 
-        // Attempt to delete workout → should fail due to RESTRICT
+        // Attempt to delete core → should fail due to RESTRICT
         let result = repository.delete_workout(&mut tx, workout_id).await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("may be in use"));
@@ -456,7 +480,8 @@ mod tests {
         let mut tx = pool.begin().await.unwrap();
         let repository = WorkoutRepo::new();
 
-        let workout_id = repository.create_workout(&mut tx, mock_workout_req("Logged Workout"))
+        let workout_id = repository
+            .create_workout(&mut tx, mock_workout_req("Logged Workout"))
             .await
             .unwrap();
 
@@ -468,43 +493,43 @@ mod tests {
             .await
             .unwrap();
 
-        let ex_id =
-            repository.create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1", "Pushups"))
-                .await
-                .unwrap();
+        let ex_id = repository
+            .create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1", "Pushups"))
+            .await
+            .unwrap();
 
         // Create a log group
         let now = Utc::now().format("%Y-%m-%d").to_string();
         let log_group_id: i64 = sqlx::query(
             "INSERT INTO workout_log_groups (created_at, date, notes) VALUES (?, ?, ?)",
         )
-            .bind(Utc::now())
-            .bind(&now)
-            .bind("Test session")
-            .execute(&mut *tx)
-            .await
-            .unwrap()
-            .last_insert_rowid();
+        .bind(Utc::now())
+        .bind(&now)
+        .bind("Test session")
+        .execute(&mut *tx)
+        .await
+        .unwrap()
+        .last_insert_rowid();
 
-        // Create a log entry referencing the workout exercise
+        // Create a log entry referencing the core exercise
         sqlx::query(
             r#"INSERT INTO workout_logs (
                 workout_id, workout_exercise_id, workout_log_group_id,
                 set_number, rep_number_or_seconds, weight, description
             ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
         )
-            .bind(workout_id)
-            .bind(ex_id)
-            .bind(log_group_id as u32)
-            .bind(1u8)
-            .bind(8u8)
-            .bind(100u32)
-            .bind("Completed")
-            .execute(&mut *tx)
-            .await
-            .unwrap();
+        .bind(workout_id)
+        .bind(ex_id)
+        .bind(log_group_id as u32)
+        .bind(1u8)
+        .bind(8u8)
+        .bind(100u32)
+        .bind("Completed")
+        .execute(&mut *tx)
+        .await
+        .unwrap();
 
-        // Now try to delete the workout exercise → should fail
+        // Now try to delete the core exercise → should fail
         let result = repository.delete_workout_exercise(&mut tx, ex_id).await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("may be in use"));

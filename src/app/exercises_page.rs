@@ -1,21 +1,18 @@
 use crate::app::utils;
-use crate::app::utils::{filter_combo, CommonUiState};
-use crate::db::pagination_support::{PaginationRes, PaginationState};
-use crate::workout::enums::{
+use crate::app::utils::{CommonUiState, filter_combo};
+use crate::core::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
-use crate::workout::exercise::{
-    create_exercise, delete_exercise, get_one_exercise, paginate_exercises, update_exercise,
-    ExerciseLibraryEntity,
+use crate::core::exercise::exercise::{ExerciseLibraryEntity, ExerciseRepo};
+use crate::core::exercise::exercise_dto::{
+    ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ExerciseName, ValidExercise,
+    exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name,
 };
-use crate::workout::exercise_dto::{
-    exercise_library_default_req, exercise_to_req, get_exercise_id, get_exercise_name, ExerciseLibraryFilterReq,
-    ExerciseLibraryReq, ExerciseLibraryRes, ExerciseName, ValidExercise,
-};
+use crate::db::pagination_support::{PaginationRes, PaginationState};
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::Duration;
 
 pub struct ExercisesPage {
@@ -124,8 +121,13 @@ impl ExercisesPage {
 
         let ctx = ctx.clone();
 
+        let repository = ExerciseRepo::new();
+
         tokio::spawn(async move {
-            match paginate_exercises(&pool, Some(filter), params).await {
+            match repository
+                .paginate_exercises(&pool, Some(filter), params)
+                .await
+            {
                 Ok(res) => {
                     let _ = sender.send(ExercisesPageMsg::ListLoaded(res));
                 }
@@ -143,8 +145,10 @@ impl ExercisesPage {
         let pool = self.pool.clone();
         let ctx = ctx.clone();
 
+        let repository = ExerciseRepo::new();
+
         tokio::spawn(async move {
-            match get_one_exercise(&pool, id).await {
+            match repository.get_one_exercise(&pool, id).await {
                 Ok(e) => {
                     let _ = sender.send(ExercisesPageMsg::DetailLoaded(e));
                 }
@@ -164,6 +168,8 @@ impl ExercisesPage {
         let is_edit = matches!(self.state, ExercisesPageState::DetailsEditView);
         let ctx = ctx.clone();
 
+        let repository = ExerciseRepo::new();
+
         let id_opt = self.current_detail.as_ref().map(|d| get_exercise_id(d));
 
         tokio::spawn(async move {
@@ -181,10 +187,12 @@ impl ExercisesPage {
                         Ok(mut entity) => {
                             entity.id = id; // Set the ID
                             match entity.to_valid_struct() {
-                                Ok(valid) => match update_exercise(&mut conn, valid).await {
-                                    Ok(_) => Ok(()),
-                                    Err(e) => Err(e),
-                                },
+                                Ok(valid) => {
+                                    match repository.update_exercise(&mut conn, valid).await {
+                                        Ok(_) => Ok(()),
+                                        Err(e) => Err(e),
+                                    }
+                                }
                                 Err(e) => Err(e),
                             }
                         }
@@ -194,7 +202,7 @@ impl ExercisesPage {
                     Err("No ID found for edit".to_string())
                 }
             } else {
-                create_exercise(&mut conn, req).await.map(|_| ())
+                repository.create_exercise(&mut conn, req).await.map(|_| ())
             };
 
             match res {
@@ -225,6 +233,8 @@ impl ExercisesPage {
         let pool = self.pool.clone();
         let ctx = ctx.clone();
 
+        let repository = ExerciseRepo::new();
+
         tokio::spawn(async move {
             let mut conn = match pool.begin().await {
                 Ok(c) => c,
@@ -234,7 +244,7 @@ impl ExercisesPage {
                 }
             };
 
-            match delete_exercise(&mut conn, id).await {
+            match repository.delete_exercise(&mut conn, id).await {
                 Ok(_) => {
                     if let Err(e) = conn.commit().await {
                         let _ =
@@ -729,6 +739,8 @@ impl ExercisesPage {
                         });
                 });
 
+                let repository = ExerciseRepo::new();
+
                 if let Some(act) = action {
                     match act {
                         ListAction::Details(id) => {
@@ -751,7 +763,7 @@ impl ExercisesPage {
                                         return;
                                     }
                                 };
-                                if let Err(e) = delete_exercise(&mut conn, id).await {
+                                if let Err(e) = repository.delete_exercise(&mut conn, id).await {
                                     let _ = sender.send(ExercisesPageMsg::Error(e));
                                 } else {
                                     let _ = conn.commit().await;

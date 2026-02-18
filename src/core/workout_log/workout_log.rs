@@ -1,5 +1,5 @@
+use crate::core::workout_log::workout_log_dto::{WorkoutLogReq, WorkoutLogRes};
 use crate::db::pagination_support::PaginationParams;
-use crate::workout::workout_log_dto::{WorkoutLogReq, WorkoutLogRes};
 use chrono::{DateTime, NaiveDate, Utc};
 use sqlx::{Executor, FromRow, Sqlite, Transaction};
 
@@ -61,7 +61,7 @@ pub async fn delete_log_group(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Resu
 }
 
 // TODO need to join logs
-pub async fn get_one_log_group<'e, E: Executor<'e, Database=Sqlite>>(
+pub async fn get_one_log_group<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     id: u32,
 ) -> Result<WorkoutLogGroupEntity, String> {
@@ -85,16 +85,16 @@ pub async fn create_log(
             set_number, rep_number_or_seconds, weight, description
         ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
     )
-        .bind(req.workout_id)
-        .bind(req.workout_exercise_id)
-        .bind(req.workout_log_group_id)
-        .bind(req.set_number)
-        .bind(req.rep_number_or_seconds)
-        .bind(req.weight)
-        .bind(req.description)
-        .execute(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to create workout log: {}", e))?;
+    .bind(req.workout_id)
+    .bind(req.workout_exercise_id)
+    .bind(req.workout_log_group_id)
+    .bind(req.set_number)
+    .bind(req.rep_number_or_seconds)
+    .bind(req.weight)
+    .bind(req.description)
+    .execute(&mut **tx)
+    .await
+    .map_err(|e| format!("Failed to create core log: {}", e))?;
 
     Ok(result.last_insert_rowid() as u32)
 }
@@ -104,7 +104,7 @@ pub async fn delete_log(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result<(),
         .bind(id)
         .execute(&mut **tx)
         .await
-        .map_err(|e| format!("Failed to delete workout log: {}", e))?;
+        .map_err(|e| format!("Failed to delete core log: {}", e))?;
 
     if result.rows_affected() == 0 {
         return Err("Workout log not found".to_string());
@@ -113,8 +113,8 @@ pub async fn delete_log(tx: &mut Transaction<'_, Sqlite>, id: u32) -> Result<(),
     Ok(())
 }
 
-// TODO need to join exercises and workout
-pub async fn get_one_log<'e, E: Executor<'e, Database=Sqlite>>(
+// TODO need to join exercises and core
+pub async fn get_one_log<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     id: u32,
 ) -> Result<WorkoutLogRes, String> {
@@ -137,7 +137,7 @@ pub async fn get_one_log<'e, E: Executor<'e, Database=Sqlite>>(
     })
 }
 
-pub async fn paginate_logs<'e, E: Executor<'e, Database=Sqlite>>(
+pub async fn paginate_logs<'e, E: Executor<'e, Database = Sqlite>>(
     executor: E,
     pagination_params: PaginationParams,
 ) -> Result<(), String> {
@@ -148,10 +148,8 @@ pub async fn paginate_logs<'e, E: Executor<'e, Database=Sqlite>>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::{init_db, IN_MEMORY_DB_URL};
-    use crate::workout::enums::{
-        Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower,
-    };
+    use crate::core::enums::{Band, CompoundOrIsolation, DynamicOrStatic, Equipment, UpperOrLower};
+    use crate::db::{IN_MEMORY_DB_URL, init_db};
     use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {
@@ -165,17 +163,17 @@ mod tests {
                 name, dynamic_or_static, upper_or_lower, compound_or_isolation
             ) VALUES (?, ?, ?, ?)"#,
         )
-            .bind("Dummy Ex")
-            .bind(DynamicOrStatic::Dynamic)
-            .bind(UpperOrLower::Upper)
-            .bind(CompoundOrIsolation::Compound)
-            .execute(&mut **tx)
-            .await
-            .unwrap();
+        .bind("Dummy Ex")
+        .bind(DynamicOrStatic::Dynamic)
+        .bind(UpperOrLower::Upper)
+        .bind(CompoundOrIsolation::Compound)
+        .execute(&mut **tx)
+        .await
+        .unwrap();
         1 // first auto-increment ID
     }
 
-    // Helper: Create full workout plan → workout → workout_exercise chain
+    // Helper: Create full core plan → core → workout_exercise chain
     async fn create_workout_exercise(tx: &mut Transaction<'_, Sqlite>) -> (u32, u32, u32) {
         // (plan_id, workout_id, exercise_id)
         let exercise_id = create_dummy_exercise(tx).await;
@@ -211,22 +209,22 @@ mod tests {
                 rest_period_seconds, tempo, emom, equipments, bands, description
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
-            .bind(chrono::Utc::now())
-            .bind(workout_id)
-            .bind(exercise_id)
-            .bind("A1")
-            .bind(3u8)
-            .bind(10u8)
-            .bind(50u8)
-            .bind(60u8)
-            .bind("2010")
-            .bind(false)
-            .bind(sqlx::types::Json(vec![Equipment::Barbell]))
-            .bind(sqlx::types::Json(vec![Band::Yellow]))
-            .bind(Option::<String>::None)
-            .execute(&mut **tx)
-            .await
-            .unwrap();
+        .bind(chrono::Utc::now())
+        .bind(workout_id)
+        .bind(exercise_id)
+        .bind("A1")
+        .bind(3u8)
+        .bind(10u8)
+        .bind(50u8)
+        .bind(60u8)
+        .bind("2010")
+        .bind(false)
+        .bind(sqlx::types::Json(vec![Equipment::Barbell]))
+        .bind(sqlx::types::Json(vec![Band::Yellow]))
+        .bind(Option::<String>::None)
+        .execute(&mut **tx)
+        .await
+        .unwrap();
 
         let workout_exercise_id = 1u32; // first one
 
@@ -285,12 +283,12 @@ mod tests {
 
         let log_id = create_log(&mut tx, log_req)
             .await
-            .expect("Failed to create workout log");
+            .expect("Failed to create core log");
 
         // Get
         let log = get_one_log(&mut *tx, log_id)
             .await
-            .expect("Failed to get workout log");
+            .expect("Failed to get core log");
         assert_eq!(log.workout_id, workout_id);
         assert_eq!(log.workout_exercise_id, workout_exercise_id);
         assert_eq!(log.workout_log_group_id, group_id);
@@ -301,7 +299,7 @@ mod tests {
         // Delete
         delete_log(&mut tx, log_id)
             .await
-            .expect("Failed to delete workout log");
+            .expect("Failed to delete core log");
 
         assert!(get_one_log(&mut *tx, log_id).await.is_err());
 

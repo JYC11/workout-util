@@ -1,8 +1,8 @@
-use crate::db::pagination_support::HasId;
-use crate::workout::enums::{
+use crate::core::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
     SquatOrHinge, StraightOrBentArm, UpperOrLower,
 };
+use crate::db::pagination_support::HasId;
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
