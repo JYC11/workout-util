@@ -1,5 +1,5 @@
 use crate::client::app::WorkoutUtil;
-use crate::db::{DEFAULT_DB_URL, init_db};
+use crate::db::{init_db, DEFAULT_DB_URL};
 use eframe::egui;
 use std::error::Error;
 
