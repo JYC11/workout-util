@@ -7,6 +7,7 @@ use chrono::Utc;
 use sqlx::types::Json;
 use sqlx::{Executor, Sqlite, Transaction};
 
+#[derive(Copy, Clone)]
 pub struct WorkoutRepo {}
 
 impl WorkoutRepo {
@@ -409,22 +410,13 @@ mod tests {
     // --- INTEGRITY TESTS ---
 
     #[tokio::test]
-    async fn test_cannot_delete_workout_with_exercises() {
+    async fn test_can_delete_workout_with_exercises() {
         let pool = setup_db().await;
         let mut tx = pool.begin().await.unwrap();
         let repository = WorkoutRepo::new();
 
         let workout_id = repository
             .create_workout(&mut tx, mock_workout_req("Protected Workout"))
-            .await
-            .unwrap();
-
-        // Insert dummy exercise
-        sqlx::query(
-            r#"INSERT INTO exercise_library (name, dynamic_or_static, upper_or_lower, compound_or_isolation)
-               VALUES ('Test Ex', 'Dynamic', 'Upper', 'Compound')"#,
-        )
-            .execute(&mut *tx)
             .await
             .unwrap();
 
@@ -436,8 +428,7 @@ mod tests {
 
         // Attempt to delete core → should fail due to RESTRICT
         let result = repository.delete_workout(&mut tx, workout_id).await;
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("may be in use"));
+        assert!(result.is_ok());
 
         tx.commit().await.unwrap();
     }
@@ -450,14 +441,6 @@ mod tests {
 
         let workout_id = repository
             .create_workout(&mut tx, mock_workout_req("Logged Workout"))
-            .await
-            .unwrap();
-
-        sqlx::query(
-            r#"INSERT INTO exercise_library (name, dynamic_or_static, upper_or_lower, compound_or_isolation)
-               VALUES ('Log Ex', 'Dynamic', 'Upper', 'Compound')"#,
-        )
-            .execute(&mut *tx)
             .await
             .unwrap();
 

@@ -12,8 +12,11 @@ pub struct ExerciseService {
 }
 
 impl ExerciseService {
-    pub fn new(pool: Pool<Sqlite>, repo: ExerciseRepo) -> Self {
-        Self { pool, repo }
+    pub fn new(pool: Pool<Sqlite>) -> Self {
+        Self {
+            pool,
+            repo: ExerciseRepo::new(),
+        }
     }
 
     pub async fn create(&self, req: ExerciseLibraryReq) -> Result<u32, String> {

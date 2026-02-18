@@ -1,12 +1,13 @@
 use crate::app::utils::CommonUiState;
 use crate::core::workout::workout_dto::WorkoutsFilterReq;
+use crate::core::workout::workout_service::WorkoutService;
 use crate::db::pagination_support::PaginationState;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct WorkoutsPage {
-    pool: Pool<Sqlite>,
+    service: WorkoutService,
     state: WorkoutsPageState,
     // Workout Search/Filter State
     workout_filters: WorkoutsFilterReq,
@@ -31,7 +32,7 @@ impl WorkoutsPage {
     pub fn default(pool: Pool<Sqlite>) -> Self {
         let (sender, receiver) = channel();
         Self {
-            pool,
+            service: WorkoutService::new(pool),
             state: WorkoutsPageState::DetailsClosed,
             workout_filters: WorkoutsFilterReq::default(),
             workout_pagination_state: PaginationState::default(),

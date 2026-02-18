@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     equipments TEXT NOT NULL,         -- Serialized List/JSON
     bands TEXT NOT NULL,              -- Serialized List/JSON
     description TEXT,
-    FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE RESTRICT
+    FOREIGN KEY (workout_id) REFERENCES workouts(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS workout_log_groups (

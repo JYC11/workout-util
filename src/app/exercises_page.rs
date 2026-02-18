@@ -48,7 +48,7 @@ impl ExercisesPage {
     pub fn default(pool: Pool<Sqlite>) -> Self {
         let (sender, receiver) = channel();
         Self {
-            service: ExerciseService::new(pool.clone(), ExerciseRepo::new()),
+            service: ExerciseService::new(pool),
             state: ExercisesPageState::DetailsClosed,
             list_items: Vec::new(),
             current_detail: None,
