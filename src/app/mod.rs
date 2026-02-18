@@ -52,6 +52,7 @@ impl WorkoutUtil {
                 (MainPageState::Exercises, "Exercises"),
                 (MainPageState::Workouts, "Workouts"),
                 (MainPageState::StartWorkout, "Start Workout"),
+                (MainPageState::WorkoutLogs, "Workout Logs"),
             ] {
                 let is_active = self.current_page == page;
 
