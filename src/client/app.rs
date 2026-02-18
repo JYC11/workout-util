@@ -4,6 +4,7 @@ use crate::workout_log::workout_logs_page::WorkoutLogsPage;
 use crate::workout_log::workouts_page::WorkoutsPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
+use crate::timer::metronome::Metronome;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MainPageState {
@@ -26,6 +27,7 @@ pub struct WorkoutUtil {
     workouts_page: WorkoutsPage,
     start_workout_page: StartWorkoutPage,
     workout_logs_page: WorkoutLogsPage,
+    metronome: Metronome,
 }
 
 impl WorkoutUtil {
@@ -37,6 +39,7 @@ impl WorkoutUtil {
             workouts_page: WorkoutsPage::default(pool.clone()),
             start_workout_page: StartWorkoutPage::default(pool.clone()),
             workout_logs_page: WorkoutLogsPage::default(pool.clone()),
+            metronome: Metronome::new(),
         }
     }
 
@@ -109,7 +112,13 @@ impl WorkoutUtil {
         ui.label("Welcome to Workout Util!");
     }
 
-    fn footer(&mut self, ui: &mut egui::Ui) {
+    fn footer(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+        self.metronome.tick();
+        
+        if self.metronome.is_running {
+            ctx.request_repaint();
+        }
+
         ui.horizontal(|ui| {
             ui.label("Rest Timer");
             ui.separator();
@@ -123,11 +132,8 @@ impl WorkoutUtil {
             }
             ui.separator();
             ui.label("Metronome");
-            if ui.button("Start").clicked() {
-                println!("Clicked start");
-            }
-            if ui.button("Stop").clicked() {
-                println!("Clicked stop");
+            if ui.button(if self.metronome.is_running { "Stop" } else { "Start" }).clicked() {
+                self.metronome.toggle();
             }
         });
     }
@@ -144,7 +150,7 @@ impl eframe::App for WorkoutUtil {
         egui::TopBottomPanel::bottom("bottom_panel")
             .default_height(60.0)
             .show(ctx, |ui| {
-                self.footer(ui);
+                self.footer(ctx, ui);
             });
 
         egui::CentralPanel::default().show(ctx, |ui| {

@@ -1,4 +1,5 @@
 use crate::client::run_app;
+use rodio::Source;
 use std::error::Error;
 
 pub mod client;
@@ -9,6 +10,7 @@ pub mod exercise;
 mod timer;
 pub mod workout;
 pub mod workout_log;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
