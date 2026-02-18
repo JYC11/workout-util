@@ -14,6 +14,7 @@ pub struct WorkoutExerciseEntity {
     pub id: u32,
     pub created_at: DateTime<Utc>, // should be some kinda DateTime
     pub workout_id: u32,           // fk to Workout
+    pub name: String,
     pub code: String,              // A1, A2, B1, B2 ... input by user
     pub sets_target: u8,
     pub reps_or_seconds_target: u8,
@@ -144,13 +145,14 @@ pub async fn create_workout_exercise(
     let result = sqlx::query(
         r#"
         INSERT INTO workout_exercises (
-            created_at, workout_id, code, sets_target, reps_or_seconds_target, working_weight,
+            created_at, workout_id, name, code, sets_target, reps_or_seconds_target, working_weight,
             rest_period_seconds, tempo, emom, equipments, bands, description
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
     )
         .bind(created_at)
         .bind(req.workout_id)
+        .bind(&req.name)
         .bind(&req.code)
         .bind(req.sets_target)
         .bind(req.reps_or_seconds_target)
@@ -177,7 +179,7 @@ pub async fn update_workout_exercise(
     let result = sqlx::query(
         r#"
         UPDATE workout_exercises
-        SET workout_id = ?, code = ?,
+        SET workout_id = ?, code = ?, name = ?,
             sets_target = ?, reps_or_seconds_target = ?, working_weight = ?,
             rest_period_seconds = ?, tempo = ?, emom = ?, equipments = ?,
             bands = ?, description = ?
@@ -186,6 +188,7 @@ pub async fn update_workout_exercise(
     )
         .bind(req.workout_id)
         .bind(&req.code)
+        .bind(&req.name)
         .bind(req.sets_target)
         .bind(req.reps_or_seconds_target)
         .bind(req.working_weight)
@@ -240,6 +243,7 @@ pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database=Sqlite>>(
     Ok(WorkoutExerciseRes {
         id: row.id,
         workout_id: row.workout_id,
+        name: row.name,
         code: row.code,
         sets_target: row.sets_target,
         reps_or_seconds_target: row.reps_or_seconds_target,
@@ -274,10 +278,12 @@ mod tests {
     fn mock_workout_exercise_req(
         workout_id: u32,
         code: &str,
+        name: &str,
     ) -> WorkoutExerciseReq {
         WorkoutExerciseReq {
             workout_id,
             code: code.to_string(),
+            name: name.to_string(),
             sets_target: 4,
             reps_or_seconds_target: 8,
             working_weight: 100,
@@ -346,7 +352,7 @@ mod tests {
         // Create
         let ex_id = create_workout_exercise(
             &mut tx,
-            mock_workout_exercise_req(workout_id, "A1"),
+            mock_workout_exercise_req(workout_id, "A1", "Pushups"),
         )
             .await
             .expect("Failed to create workout exercise");
@@ -362,7 +368,7 @@ mod tests {
         assert_eq!(ex.tempo, "2010");
 
         // Update
-        let mut updated_req = mock_workout_exercise_req(workout_id, "A2");
+        let mut updated_req = mock_workout_exercise_req(workout_id, "A2", "Pullups");
         updated_req.sets_target = 5;
         updated_req.working_weight = 120;
         updated_req.equipments = vec![Equipment::Dumbbells];
@@ -377,6 +383,7 @@ mod tests {
             .await
             .expect("Failed to get updated exercise");
         assert_eq!(updated_ex.code, "A2");
+        assert_eq!(updated_ex.name, "Pullups");
         assert_eq!(updated_ex.sets_target, 5);
         assert_eq!(updated_ex.working_weight, 120);
         assert_eq!(updated_ex.equipments, vec![Equipment::Dumbbells]);
@@ -414,7 +421,7 @@ mod tests {
             .unwrap();
 
         // Create a workout exercise → now workout is referenced
-        create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1"))
+        create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1", "Pushups"))
             .await
             .unwrap();
 
@@ -444,7 +451,7 @@ mod tests {
             .unwrap();
 
         let ex_id =
-            create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1"))
+            create_workout_exercise(&mut tx, mock_workout_exercise_req(1, "A1", "Pushups"))
                 .await
                 .unwrap();
 

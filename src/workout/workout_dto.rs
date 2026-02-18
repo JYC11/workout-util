@@ -3,6 +3,7 @@ use crate::workout::enums::{Band, Equipment};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutExerciseReq {
     pub workout_id: u32,
+    pub name: String,
     pub code: String,
     pub sets_target: u8,
     pub reps_or_seconds_target: u8,
@@ -19,6 +20,7 @@ pub struct WorkoutExerciseReq {
 pub struct WorkoutExerciseRes {
     pub id: u32,
     pub workout_id: u32,
+    pub name: String,
     pub code: String,
     pub sets_target: u8,
     pub reps_or_seconds_target: u8,

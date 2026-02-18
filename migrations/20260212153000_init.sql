@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS workout_exercises (
     created_at TEXT NOT NULL,         -- DateTime stored as String
     workout_id INTEGER NOT NULL,
     code TEXT NOT NULL,               -- e.g., "A1", "B2"
+    name TEXT NOT NULL,
     sets_target INTEGER NOT NULL,
     reps_or_seconds_target INTEGER NOT NULL,
     working_weight INTEGER NOT NULL,
