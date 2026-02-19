@@ -2,8 +2,8 @@ use crate::db::pagination_support::HasId;
 use crate::enums::{Band, Equipment};
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use sqlx::FromRow;
 use sqlx::types::Json;
+use sqlx::FromRow;
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow, Deserialize)]

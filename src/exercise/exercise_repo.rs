@@ -1,5 +1,5 @@
 use crate::db::pagination_support::{
-    PaginationParams, PaginationRes, get_cursors, keyset_paginate,
+    get_cursors, keyset_paginate, PaginationParams, PaginationRes,
 };
 use crate::enums::{
     CompoundOrIsolation, Grip, GripWidth, LeverVariation, PushOrPull, SquatOrHinge,
@@ -34,20 +34,20 @@ impl ExerciseRepo {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
         )
-        .bind(entity.name)
-        .bind(entity.push_or_pull)
-        .bind(entity.dynamic_or_static)
-        .bind(entity.straight_or_bent)
-        .bind(entity.squat_or_hinge)
-        .bind(entity.upper_or_lower)
-        .bind(entity.compound_or_isolation)
-        .bind(entity.lever_variation)
-        .bind(entity.grip)
-        .bind(entity.grip_width)
-        .bind(entity.description)
-        .execute(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to create exercise: {}", e))?;
+            .bind(entity.name)
+            .bind(entity.push_or_pull)
+            .bind(entity.dynamic_or_static)
+            .bind(entity.straight_or_bent)
+            .bind(entity.squat_or_hinge)
+            .bind(entity.upper_or_lower)
+            .bind(entity.compound_or_isolation)
+            .bind(entity.lever_variation)
+            .bind(entity.grip)
+            .bind(entity.grip_width)
+            .bind(entity.description)
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| format!("Failed to create exercise: {}", e))?;
 
         let id = result.last_insert_rowid() as u32;
 
@@ -148,20 +148,20 @@ impl ExerciseRepo {
         WHERE id = ?
         "#,
         )
-        .bind(name)
-        .bind(push_or_pull)
-        .bind(dynamic_or_static)
-        .bind(straight_or_bent)
-        .bind(squat_or_hinge)
-        .bind(upper_or_lower)
-        .bind(compound_or_isolation)
-        .bind(lever_variation)
-        .bind(grip)
-        .bind(grip_width)
-        .bind(id)
-        .execute(&mut **tx)
-        .await
-        .map_err(|e| format!("Failed to update exercise: {}", e))?;
+            .bind(name)
+            .bind(push_or_pull)
+            .bind(dynamic_or_static)
+            .bind(straight_or_bent)
+            .bind(squat_or_hinge)
+            .bind(upper_or_lower)
+            .bind(compound_or_isolation)
+            .bind(lever_variation)
+            .bind(grip)
+            .bind(grip_width)
+            .bind(id)
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| format!("Failed to update exercise: {}", e))?;
 
         if result.rows_affected() == 0 {
             return Err("Exercise not found".to_string());
@@ -188,7 +188,7 @@ impl ExerciseRepo {
         Ok(())
     }
 
-    pub async fn get_one_exercise<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn get_one_exercise<'e, E: Executor<'e, Database=Sqlite>>(
         &self,
         executor: E,
         exercise_id: u32,
@@ -204,7 +204,7 @@ impl ExerciseRepo {
         row.to_valid_struct()
     }
 
-    pub async fn paginate_exercises<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn paginate_exercises<'e, E: Executor<'e, Database=Sqlite>>(
         &self,
         executor: E,
         filter_req: Option<ExerciseLibraryFilterReq>,
@@ -340,7 +340,7 @@ impl ExerciseRepo {
 #[cfg(test)]
 mod tests {
     use crate::db::pagination_support::{PaginationDirection, PaginationParams};
-    use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::db::{init_db, IN_MEMORY_DB_URL};
     use crate::enums::*;
     use crate::exercise::exercise_dto::{
         ExerciseLibraryFilterReq, ExerciseLibraryReq, ValidExercise,
