@@ -1,7 +1,7 @@
+use crate::timer::Timer;
 #[cfg(test)]
 use crate::timer::audio_engine::AudioBackend;
 use crate::timer::countdown_timer::CountDownTimer;
-use crate::timer::Timer;
 
 pub struct EMOMTimer {
     pub current_round: u32,

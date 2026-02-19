@@ -1,5 +1,5 @@
 use crate::db::pagination_support::{
-    get_cursors, keyset_paginate, PaginationParams, PaginationRes,
+    PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
 use crate::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
@@ -30,13 +30,13 @@ impl WorkoutRepo {
         VALUES (?, ?, ?, ?)
         "#,
         )
-            .bind(created_at)
-            .bind(&req.name)
-            .bind(&req.description)
-            .bind(&req.active)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to create core: {}", e))?;
+        .bind(created_at)
+        .bind(&req.name)
+        .bind(&req.description)
+        .bind(&req.active)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create core: {}", e))?;
 
         let id = result.last_insert_rowid() as u32;
         Ok(id)
@@ -55,13 +55,13 @@ impl WorkoutRepo {
         WHERE id = ?
         "#,
         )
-            .bind(&req.name)
-            .bind(&req.description)
-            .bind(&req.active)
-            .bind(id)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to update core: {}", e))?;
+        .bind(&req.name)
+        .bind(&req.description)
+        .bind(&req.active)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update core: {}", e))?;
 
         if result.rows_affected() == 0 {
             return Err("Workout not found".to_string());
@@ -88,7 +88,7 @@ impl WorkoutRepo {
         Ok(())
     }
 
-    pub async fn get_one_workout<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         id: u32,
@@ -103,7 +103,7 @@ impl WorkoutRepo {
         Ok(WorkoutRes::from_entity(row))
     }
 
-    pub async fn paginate_workouts<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn paginate_workouts<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         pagination_filters: Option<WorkoutsFilterReq>,
@@ -169,22 +169,22 @@ impl WorkoutRepo {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         "#,
         )
-            .bind(created_at)
-            .bind(req.workout_id)
-            .bind(&req.name)
-            .bind(&req.code)
-            .bind(req.sets_target)
-            .bind(req.reps_or_seconds_target)
-            .bind(req.working_weight)
-            .bind(req.rest_period_seconds)
-            .bind(&req.tempo)
-            .bind(&req.emom)
-            .bind(Json(req.equipments))
-            .bind(Json(req.bands))
-            .bind(&req.description)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to create core exercise: {}", e))?;
+        .bind(created_at)
+        .bind(req.workout_id)
+        .bind(&req.name)
+        .bind(&req.code)
+        .bind(req.sets_target)
+        .bind(req.reps_or_seconds_target)
+        .bind(req.working_weight)
+        .bind(req.rest_period_seconds)
+        .bind(&req.tempo)
+        .bind(&req.emom)
+        .bind(Json(req.equipments))
+        .bind(Json(req.bands))
+        .bind(&req.description)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to create core exercise: {}", e))?;
 
         let id = result.last_insert_rowid() as u32;
         Ok(id)
@@ -206,22 +206,22 @@ impl WorkoutRepo {
         WHERE id = ?
         "#,
         )
-            .bind(req.workout_id)
-            .bind(&req.code)
-            .bind(&req.name)
-            .bind(req.sets_target)
-            .bind(req.reps_or_seconds_target)
-            .bind(req.working_weight)
-            .bind(req.rest_period_seconds)
-            .bind(&req.tempo)
-            .bind(req.emom)
-            .bind(Json(req.equipments))
-            .bind(Json(req.bands))
-            .bind(&req.description)
-            .bind(id)
-            .execute(&mut **tx)
-            .await
-            .map_err(|e| format!("Failed to update core exercise: {}", e))?;
+        .bind(req.workout_id)
+        .bind(&req.code)
+        .bind(&req.name)
+        .bind(req.sets_target)
+        .bind(req.reps_or_seconds_target)
+        .bind(req.working_weight)
+        .bind(req.rest_period_seconds)
+        .bind(&req.tempo)
+        .bind(req.emom)
+        .bind(Json(req.equipments))
+        .bind(Json(req.bands))
+        .bind(&req.description)
+        .bind(id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|e| format!("Failed to update core exercise: {}", e))?;
 
         if result.rows_affected() == 0 {
             return Err("Workout exercise not found".to_string());
@@ -248,7 +248,7 @@ impl WorkoutRepo {
         Ok(())
     }
 
-    pub async fn get_workout_exercises_by_workout_id<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn get_workout_exercises_by_workout_id<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         workout_id: u32,
@@ -268,7 +268,7 @@ impl WorkoutRepo {
         Ok(res)
     }
 
-    pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database=Sqlite>>(
+    pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         id: u32,
@@ -288,7 +288,7 @@ impl WorkoutRepo {
 #[cfg(test)]
 mod tests {
     use crate::db::pagination_support::{PaginationDirection, PaginationParams};
-    use crate::db::{init_db, IN_MEMORY_DB_URL};
+    use crate::db::{IN_MEMORY_DB_URL, init_db};
     use crate::enums::{Band, Equipment};
     use crate::workout::workout_dto::{WorkoutExerciseReq, WorkoutReq, WorkoutsFilterReq};
     use crate::workout::workout_repo::WorkoutRepo;
@@ -602,13 +602,13 @@ mod tests {
         let log_group_id: i64 = sqlx::query(
             "INSERT INTO workout_log_groups (created_at, date, notes) VALUES (?, ?, ?)",
         )
-            .bind(Utc::now())
-            .bind(&now)
-            .bind("Test session")
-            .execute(&mut *tx)
-            .await
-            .unwrap()
-            .last_insert_rowid();
+        .bind(Utc::now())
+        .bind(&now)
+        .bind("Test session")
+        .execute(&mut *tx)
+        .await
+        .unwrap()
+        .last_insert_rowid();
 
         // Create a log entry referencing the core exercise
         sqlx::query(
@@ -617,16 +617,16 @@ mod tests {
                 set_number, rep_number_or_seconds, weight, description
             ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
         )
-            .bind(workout_id)
-            .bind(ex_id)
-            .bind(log_group_id as u32)
-            .bind(1u8)
-            .bind(8u8)
-            .bind(100u32)
-            .bind("Completed")
-            .execute(&mut *tx)
-            .await
-            .unwrap();
+        .bind(workout_id)
+        .bind(ex_id)
+        .bind(log_group_id as u32)
+        .bind(1u8)
+        .bind(8u8)
+        .bind(100u32)
+        .bind("Completed")
+        .execute(&mut *tx)
+        .await
+        .unwrap();
 
         // Now try to delete the core exercise → should fail
         let result = repository.delete_workout_exercise(&mut tx, ex_id).await;

@@ -1,5 +1,5 @@
-use crate::timer::audio_engine::{AudioBackend, AudioEngine};
 use crate::timer::Timer;
+use crate::timer::audio_engine::{AudioBackend, AudioEngine};
 use std::time::{Duration, Instant};
 
 pub struct CountDownTimer {

@@ -1,8 +1,8 @@
 use crate::exercise::exercises_page::ExercisesPage;
+use crate::timer::Timer;
 use crate::timer::countdown_timer::CountDownTimer;
 use crate::timer::emom_timer::EMOMTimer;
 use crate::timer::metronome::Metronome;
-use crate::timer::Timer;
 use crate::workout::start_workout_page::StartWorkoutPage;
 use crate::workout::workouts_page::WorkoutsPage;
 use crate::workout_log::workout_logs_page::WorkoutLogsPage;

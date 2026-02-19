@@ -4,10 +4,10 @@ use crate::workout::workout_dto::{WorkoutExerciseRes, WorkoutRes};
 use crate::workout::workout_service::WorkoutService;
 use crate::workout_log::workout_log_dto::{WorkoutLogGroupReq, WorkoutLogReq};
 use crate::workout_log::workout_log_service::WorkoutLogService;
+use chrono::Local;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use std::sync::mpsc::{channel, Receiver, Sender};
-
+use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct StartWorkoutPage {
     current_workout_id: Option<u32>,
@@ -27,12 +27,18 @@ pub struct StartWorkoutPage {
 #[derive(Debug, Clone)]
 struct ActiveSession {
     exercises: Vec<ActiveExercise>,
+    description: Option<String>,
 }
 
 #[derive(Debug, Clone)]
 struct ActiveExercise {
     workout_exercise_id: u32,
     exercise_name: String,
+    reps_or_seconds_target: u8,
+    working_weight: u16,
+    rest_period_seconds: u8,
+    tempo: String,
+    emom: bool,
     sets: Vec<ActiveSet>,
 }
 
@@ -81,7 +87,7 @@ impl StartWorkoutPage {
                             let sets = (1..=e.sets_target)
                                 .map(|i| ActiveSet {
                                     set_number: i,
-                                    weight: "".to_string(), // Could pre-fill from history in future
+                                    weight: "".to_string(),
                                     reps: "".to_string(),
                                     description: "".to_string(),
                                     completed: false,
@@ -91,6 +97,11 @@ impl StartWorkoutPage {
                             ActiveExercise {
                                 workout_exercise_id: e.id,
                                 exercise_name: e.name.clone(),
+                                reps_or_seconds_target: e.reps_or_seconds_target.clone(),
+                                working_weight: e.working_weight.clone(),
+                                rest_period_seconds: e.rest_period_seconds.clone(),
+                                tempo: e.tempo.clone(),
+                                emom: e.emom.clone(),
                                 sets,
                             }
                         })
@@ -98,6 +109,7 @@ impl StartWorkoutPage {
 
                     self.active_session = Some(ActiveSession {
                         exercises: active_exercises,
+                        description: None,
                     });
 
                     self.current_workout = Some(workout);
@@ -121,12 +133,72 @@ impl StartWorkoutPage {
     fn render_workout(&mut self, ui: &mut egui::Ui) {
         if let Some(session) = &mut self.active_session {
             egui::ScrollArea::vertical().show(ui, |ui| {
+                // 1. Render Session Description Edit
+                ui.label("Workout Notes:");
+                let mut description = session.description.clone().unwrap_or_default();
+                if ui
+                    .add(
+                        egui::TextEdit::multiline(&mut description)
+                            .hint_text("How are you feeling today?"),
+                    )
+                    .changed()
+                {
+                    session.description = if description.is_empty() {
+                        None
+                    } else {
+                        Some(description)
+                    };
+                }
+                ui.add_space(10.0);
+                ui.separator();
+                ui.add_space(10.0);
+
                 for (ex_idx, exercise) in session.exercises.iter_mut().enumerate() {
                     let id = ui.make_persistent_id(format!("ex_{}", ex_idx));
                     egui::CollapsingHeader::new(&exercise.exercise_name)
                         .id_salt(id)
                         .default_open(true)
                         .show(ui, |ui| {
+                            // 2. Render ActiveExercise Details (Targets)
+                            ui.horizontal_wrapped(|ui| {
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "Target: {} {}",
+                                        exercise.reps_or_seconds_target,
+                                        if exercise.reps_or_seconds_target > 20 {
+                                            "s"
+                                        } else {
+                                            "reps"
+                                        }
+                                    ))
+                                    .strong(),
+                                );
+                                ui.label("|");
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "Weight: {}kg",
+                                        exercise.working_weight
+                                    ))
+                                    .strong(),
+                                );
+                                ui.label("|");
+                                ui.label(format!("Rest: {}s", exercise.rest_period_seconds));
+
+                                if !exercise.tempo.is_empty() {
+                                    ui.label("|");
+                                    ui.label(format!("Tempo: {}", exercise.tempo));
+                                }
+                                if exercise.emom {
+                                    ui.label("|");
+                                    ui.label(
+                                        egui::RichText::new("EMOM")
+                                            .color(egui::Color32::WHITE)
+                                            .background_color(egui::Color32::RED),
+                                    );
+                                }
+                            });
+                            ui.separator();
+
                             egui::Grid::new(format!("grid_{}", ex_idx))
                                 .striped(true)
                                 .min_col_width(50.0)
@@ -225,14 +297,18 @@ impl StartWorkoutPage {
                             set_number: s.set_number,
                             weight: s.weight.parse().unwrap_or(0),
                             rep_number_or_seconds: s.reps.parse().unwrap_or(0),
-                            description: s.description.parse().ok(),
+                            description: if s.description.is_empty() {
+                                None
+                            } else {
+                                Some(s.description.clone())
+                            },
                         })
                 })
                 .collect();
 
             let log_req = WorkoutLogGroupReq {
-                date: Default::default(),
-                notes: None,
+                date: Local::now().date_naive(),
+                notes: session.description.clone(),
             };
 
             let sender = self.sender.clone();
@@ -240,7 +316,6 @@ impl StartWorkoutPage {
             let ctx = ctx.clone();
 
             tokio::spawn(async move {
-                // Assuming create_full_log exists, if not we'll need to use standard create
                 match service.create_log_group(log_req, entries).await {
                     Ok(_) => {
                         let _ = sender.send(StartWorkoutsPageMsg::Saved);

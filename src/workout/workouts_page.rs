@@ -2,13 +2,13 @@ use crate::client::app::PageAction;
 use crate::client::app_utils::CommonUiState;
 use crate::db::pagination_support::{PaginationRes, PaginationState};
 use crate::workout::workout_dto::{
-    default_exercise_req, default_workout_req, exercise_res_to_req, workout_to_req, WorkoutExerciseReq,
-    WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
+    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
+    default_exercise_req, default_workout_req, exercise_res_to_req, workout_to_req,
 };
 use crate::workout::workout_service::WorkoutService;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct WorkoutsPage {
     service: WorkoutService,
