@@ -767,7 +767,7 @@ impl WorkoutsPage {
         self.fetch_detail(id);
         self.state = WorkoutsPageState::DetailsOpenView;
     }
-    
+
     pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
         self.handle_async_messages();
 

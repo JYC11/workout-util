@@ -11,7 +11,6 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct StartWorkoutPage {
     current_workout_id: Option<u32>,
-    current_workout: Option<WorkoutRes>,
     // Local state for the active session
     active_session: Option<ActiveSession>,
     workout_service: WorkoutService,
@@ -26,6 +25,7 @@ pub struct StartWorkoutPage {
 // Temporary structs to hold form state
 #[derive(Debug, Clone)]
 struct ActiveSession {
+    name: String,
     exercises: Vec<ActiveExercise>,
     description: Option<String>,
 }
@@ -56,7 +56,6 @@ impl StartWorkoutPage {
         let (sender, receiver) = channel();
         Self {
             current_workout_id: None,
-            current_workout: None,
             active_session: None,
             workout_service: WorkoutService::new(pool.clone()),
             workout_log_service: WorkoutLogService::new(pool.clone()),
@@ -108,11 +107,10 @@ impl StartWorkoutPage {
                         .collect();
 
                     self.active_session = Some(ActiveSession {
+                        name: workout.name.clone(),
                         exercises: active_exercises,
                         description: None,
                     });
-
-                    self.current_workout = Some(workout);
                 }
                 StartWorkoutsPageMsg::Saved => {
                     self.common_ui_state
@@ -258,7 +256,6 @@ impl StartWorkoutPage {
             if ui.button("Cancel").clicked() {
                 self.active_session = None;
                 self.current_workout_id = None;
-                self.current_workout = None;
             }
 
             let valid_to_save = self
@@ -281,7 +278,7 @@ impl StartWorkoutPage {
     }
 
     fn save_log(&mut self, ctx: &egui::Context) {
-        if let (Some(session), Some(workout)) = (&self.active_session, &self.current_workout) {
+        if let Some(session) = &self.active_session {
             self.common_ui_state.set_as_loading();
 
             let current_workout_id = self
@@ -375,8 +372,8 @@ impl StartWorkoutPage {
             return PageAction::None;
         }
 
-        if let Some(workout) = &self.current_workout {
-            ui.heading(&workout.name);
+        if let Some(session) = &self.active_session {
+            ui.label(format!("Workout: {}", session.name));
         }
 
         // Main Content
