@@ -25,6 +25,18 @@ impl WorkoutLogGroupRes {
     }
 }
 
+#[derive(FromRow)]
+pub struct WorkoutLogGroupPageRes {
+    pub id: u32,
+    pub date: NaiveDate,
+}
+
+impl HasId for WorkoutLogGroupPageRes {
+    fn id(&self) -> u32 {
+        self.id
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutLogReq {
     pub workout_id: u32,
@@ -53,6 +65,11 @@ pub struct WorkoutLogFilterReq {
     pub workout_date_lte: Option<NaiveDate>,
     pub workout_name: Option<String>,
     pub workout_exercise_name: Option<String>,
+}
+
+pub struct WorkoutLogGroupFilterReq {
+    pub workout_date_gte: Option<NaiveDate>,
+    pub workout_date_lte: Option<NaiveDate>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]

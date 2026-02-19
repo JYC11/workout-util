@@ -1,9 +1,7 @@
 use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
-use crate::workout_log::workout_log_dto::{
-    WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogGroupReq, WorkoutLogGroupRes, WorkoutLogReq,
-};
+use crate::workout_log::workout_log_dto::{WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupPageRes, WorkoutLogGroupReq, WorkoutLogGroupRes, WorkoutLogReq};
 use crate::workout_log::workout_log_entity::WorkoutLogGroupEntity;
 use chrono::Utc;
 use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
@@ -172,7 +170,7 @@ impl WorkoutLogRepo {
             WHERE 1=1
         "#,
         );
-        self.pagination_filters(pagination_filters, &mut qb);
+        self.log_pagination_filters(pagination_filters, &mut qb);
         keyset_paginate(&pagination_params, Some("wl"), &mut qb);
 
         let mut rows: Vec<WorkoutLogDetailRes> = qb
@@ -186,7 +184,7 @@ impl WorkoutLogRepo {
         Ok(PaginationRes::new(rows, cursors))
     }
 
-    fn pagination_filters(
+    fn log_pagination_filters(
         &self,
         filter_req: Option<WorkoutLogFilterReq>,
         qb: &mut QueryBuilder<Sqlite>,
@@ -213,6 +211,45 @@ impl WorkoutLogRepo {
             }
         }
     }
+
+    pub async fn paginate_workout_log_groups<'e, E: Executor<'e, Database = Sqlite>>(
+        &self,
+        executor: E,
+        pagination_filters: Option<WorkoutLogGroupFilterReq>,
+        pagination_params: PaginationParams,
+    ) -> Result<PaginationRes<WorkoutLogGroupPageRes>, String> {
+        let mut qb = QueryBuilder::new("SELECT * FROM workout_log_groups WHERE 1=1");
+        self.log_group_pagination_filters(pagination_filters, &mut qb);
+        keyset_paginate(&pagination_params, None, &mut qb);
+
+        let mut rows: Vec<WorkoutLogGroupPageRes> = qb
+            .build_query_as()
+            .fetch_all(executor)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
+
+        let cursors = get_cursors(&pagination_params, &mut rows);
+
+        Ok(PaginationRes::new(rows, cursors))
+    }
+
+    fn log_group_pagination_filters(
+        &self,
+        filter_req: Option<WorkoutLogGroupFilterReq>,
+        qb: &mut QueryBuilder<Sqlite>,
+    ) {
+        if let Some(req) = filter_req {
+            if let Some(date_gte) = req.workout_date_gte {
+                qb.push(" AND date >= ");
+                qb.push_bind(date_gte);
+            }
+
+            if let Some(date_lte) = req.workout_date_lte {
+                qb.push(" AND date <= ");
+                qb.push_bind(date_lte);
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -220,9 +257,7 @@ mod tests {
     use crate::db::pagination_support::{PaginationDirection, PaginationParams};
     use crate::db::{IN_MEMORY_DB_URL, init_db};
     use crate::enums::{Band, Equipment};
-    use crate::workout_log::workout_log_dto::{
-        WorkoutLogFilterReq, WorkoutLogGroupReq, WorkoutLogReq,
-    };
+    use crate::workout_log::workout_log_dto::{WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupReq, WorkoutLogReq};
     use crate::workout_log::workout_log_repo::WorkoutLogRepo;
     use chrono::{NaiveDate, Utc};
     use sqlx::{Sqlite, SqlitePool, Transaction};
@@ -585,6 +620,95 @@ mod tests {
         assert_eq!(res_name.items.len(), 2);
         for item in res_name.items {
             assert_eq!(item.workout_name, "Workout A");
+        }
+
+        tx.commit().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_paginate_workout_log_groups() {
+        let pool = setup_db().await;
+        let mut tx = pool.begin().await.unwrap();
+        let repository = WorkoutLogRepo::new();
+
+        // 1. Seed Data
+        let date1 = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
+        let req1 = WorkoutLogGroupReq {
+            date: date1,
+            notes: Some("Note 1".to_string()),
+        };
+        let _g1_id = repository
+            .create_log_group(&mut tx, req1)
+            .await
+            .unwrap();
+
+        let date2 = NaiveDate::from_ymd_opt(2023, 1, 2).unwrap();
+        let req2 = WorkoutLogGroupReq {
+            date: date2,
+            notes: Some("Note 2".to_string()),
+        };
+        let _g2_id = repository
+            .create_log_group(&mut tx, req2)
+            .await
+            .unwrap();
+
+        let date3 = NaiveDate::from_ymd_opt(2023, 1, 3).unwrap();
+        let req3 = WorkoutLogGroupReq {
+            date: date3,
+            notes: Some("Note 3".to_string()),
+        };
+        let _g3_id = repository
+            .create_log_group(&mut tx, req3)
+            .await
+            .unwrap();
+
+        // 2. Test Simple Pagination
+        let params = PaginationParams {
+            limit: 2,
+            cursor: None,
+            direction: PaginationDirection::Forward,
+        };
+        let res = repository
+            .paginate_workout_log_groups(&mut *tx, None, params)
+            .await
+            .expect("Pagination failed");
+
+        assert_eq!(res.items.len(), 2);
+        assert_eq!(res.items[0].date, date1);
+        assert!(res.next_cursor.is_some());
+
+        // 3. Test Next Page
+        let params_next = PaginationParams {
+            limit: 2,
+            cursor: res.next_cursor,
+            direction: PaginationDirection::Forward,
+        };
+        let res_next = repository
+            .paginate_workout_log_groups(&mut *tx, None, params_next)
+            .await
+            .expect("Pagination page 2 failed");
+
+        assert_eq!(res_next.items.len(), 1);
+        assert_eq!(res_next.items[0].date, date3);
+
+        // 4. Test Filter by Date (>= 2023-01-02)
+        let filter_date = WorkoutLogGroupFilterReq {
+            workout_date_gte: Some(date2),
+            workout_date_lte: None,
+        };
+        let params_all = PaginationParams {
+            limit: 10,
+            cursor: None,
+            direction: PaginationDirection::Forward,
+        };
+        let res_filtered = repository
+            .paginate_workout_log_groups(&mut *tx, Some(filter_date), params_all)
+            .await
+            .expect("Filtered pagination failed");
+
+        assert_eq!(res_filtered.items.len(), 2);
+        for item in res_filtered.items {
+            assert!(item.date >= date2);
         }
 
         tx.commit().await.unwrap();
