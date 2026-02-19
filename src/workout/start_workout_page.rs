@@ -42,6 +42,15 @@ struct ActiveExercise {
     sets: Vec<ActiveSet>,
 }
 
+impl ActiveExercise {
+    fn rest_minutes_and_seconds(&self) -> (u8, u8) {
+        let rest_period_seconds = self.rest_period_seconds as u64;
+        let minutes = rest_period_seconds / 60;
+        let seconds = rest_period_seconds % 60;
+        (minutes as u8, seconds as u8)
+    }
+}
+
 #[derive(Debug, Clone)]
 struct ActiveSet {
     set_number: u8,
@@ -167,12 +176,7 @@ impl StartWorkoutPage {
                                 ui.label(
                                     egui::RichText::new(format!(
                                         "Target: {} {}",
-                                        exercise.reps_or_seconds_target,
-                                        if exercise.reps_or_seconds_target > 20 {
-                                            "s"
-                                        } else {
-                                            "reps"
-                                        }
+                                        exercise.reps_or_seconds_target, "seconds/reps"
                                     ))
                                     .strong(),
                                 );
@@ -185,7 +189,8 @@ impl StartWorkoutPage {
                                     .strong(),
                                 );
                                 ui.label("|");
-                                ui.label(format!("Rest: {}s", exercise.rest_period_seconds));
+                                let (minutes, seconds) = exercise.rest_minutes_and_seconds();
+                                ui.label(format!("Rest: {}m {}s", minutes, seconds));
 
                                 if !exercise.tempo.is_empty() {
                                     ui.label("|");
@@ -209,7 +214,7 @@ impl StartWorkoutPage {
                                 .show(ui, |ui| {
                                     ui.label("Set");
                                     ui.label("Weight");
-                                    ui.label("Reps");
+                                    ui.label("Reps/Seconds");
                                     ui.label("Description");
                                     ui.label("Done");
                                     ui.end_row();
