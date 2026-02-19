@@ -253,13 +253,12 @@ impl WorkoutRepo {
         executor: E,
         workout_id: u32,
     ) -> Result<Vec<WorkoutExerciseRes>, String> {
-        let rows: Vec<WorkoutExerciseEntity> = sqlx::query_as(
-            "SELECT * FROM workout_exercises WHERE workout_id = ? ORDER BY code ASC",
-        )
-        .bind(workout_id)
-        .fetch_all(executor)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let rows: Vec<WorkoutExerciseEntity> =
+            sqlx::query_as("SELECT * FROM workout_exercises WHERE workout_id = ? ORDER BY code")
+                .bind(workout_id)
+                .fetch_all(executor)
+                .await
+                .map_err(|e| format!("Database error: {}", e))?;
 
         let res = rows
             .iter()
@@ -274,7 +273,7 @@ impl WorkoutRepo {
         executor: E,
         id: u32,
     ) -> Result<WorkoutExerciseRes, String> {
-        let row: WorkoutExerciseEntity =
+        let entity: WorkoutExerciseEntity =
             sqlx::query_as("SELECT * FROM workout_exercises WHERE id = ?")
                 .bind(id)
                 .fetch_optional(executor)
@@ -282,7 +281,7 @@ impl WorkoutRepo {
                 .map_err(|e| format!("Database error: {}", e))?
                 .ok_or_else(|| "Workout exercise not found".to_string())?;
 
-        Ok(WorkoutExerciseRes::from_entity(row))
+        Ok(WorkoutExerciseRes::from_entity(entity))
     }
 }
 

@@ -2,12 +2,13 @@ use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
 use crate::workout_log::workout_log_dto::{
-    WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogReq,
+    WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogGroupReq, WorkoutLogGroupRes, WorkoutLogReq,
 };
 use crate::workout_log::workout_log_entity::WorkoutLogGroupEntity;
-use chrono::{NaiveDate, Utc};
+use chrono::Utc;
 use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
 
+#[derive(Clone, Copy)]
 pub struct WorkoutLogRepo {}
 
 impl WorkoutLogRepo {
@@ -18,8 +19,7 @@ impl WorkoutLogRepo {
     pub async fn create_log_group(
         &self,
         tx: &mut Transaction<'_, Sqlite>,
-        date: NaiveDate,
-        notes: Option<String>,
+        req: WorkoutLogGroupReq,
     ) -> Result<u32, String> {
         let created_at = Utc::now();
 
@@ -27,8 +27,8 @@ impl WorkoutLogRepo {
             r#"INSERT INTO workout_log_groups (created_at, date, notes) VALUES (?, ?, ?)"#,
         )
         .bind(created_at)
-        .bind(date)
-        .bind(notes)
+        .bind(req.date)
+        .bind(req.notes)
         .execute(&mut **tx)
         .await
         .map_err(|e| format!("Failed to create log group: {}", e))?;
@@ -55,18 +55,19 @@ impl WorkoutLogRepo {
         Ok(())
     }
 
-    // TODO need to join logs
     pub async fn get_one_log_group<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         id: u32,
-    ) -> Result<WorkoutLogGroupEntity, String> {
-        sqlx::query_as::<_, WorkoutLogGroupEntity>("SELECT * FROM workout_log_groups WHERE id = ?")
-            .bind(id)
-            .fetch_optional(executor)
-            .await
-            .map_err(|e| format!("Database error: {}", e))?
-            .ok_or_else(|| "Log group not found".to_string())
+    ) -> Result<WorkoutLogGroupRes, String> {
+        let entity: WorkoutLogGroupEntity =
+            sqlx::query_as("SELECT * FROM workout_log_groups WHERE id = ?")
+                .bind(id)
+                .fetch_optional(executor)
+                .await
+                .map_err(|e| format!("Database error: {}", e))?
+                .ok_or_else(|| "Workout log group not found".to_string())?;
+        Ok(WorkoutLogGroupRes::from_entity(entity))
     }
 
     pub async fn create_log(
@@ -112,12 +113,12 @@ impl WorkoutLogRepo {
         Ok(())
     }
 
-    pub async fn get_one_log<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn get_logs_by_workout_log_group_id<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
-        id: u32,
-    ) -> Result<WorkoutLogDetailRes, String> {
-        let res: WorkoutLogDetailRes = sqlx::query_as(
+        workout_log_group_id: u32,
+    ) -> Result<Vec<WorkoutLogDetailRes>, String> {
+        let res: Vec<WorkoutLogDetailRes> = sqlx::query_as(
             r#"
                 SELECT wl.id,
                        wlg.id AS workout_log_group_id,
@@ -134,14 +135,14 @@ impl WorkoutLogRepo {
                 JOIN workout_exercises we ON wl.workout_exercise_id = we.id
                 JOIN workouts wo ON wl.workout_id = wo.id
                 JOIN workout_log_groups wlg ON wl.workout_log_group_id = wlg.id
-                WHERE wl.id = ?
+                WHERE wl.workout_log_group_id = ?
                 "#,
         )
-        .bind(id)
-        .fetch_optional(executor)
+        .bind(workout_log_group_id)
+        .fetch_all(executor)
         .await
-        .map_err(|e| format!("Database error: {}", e))?
-        .ok_or_else(|| "Workout log not found".to_string())?;
+        .map_err(|e| format!("Database error: {}", e))?;
+
         Ok(res)
     }
 
@@ -219,7 +220,9 @@ mod tests {
     use crate::db::pagination_support::{PaginationDirection, PaginationParams};
     use crate::db::{IN_MEMORY_DB_URL, init_db};
     use crate::enums::{Band, Equipment};
-    use crate::workout_log::workout_log_dto::{WorkoutLogFilterReq, WorkoutLogReq};
+    use crate::workout_log::workout_log_dto::{
+        WorkoutLogFilterReq, WorkoutLogGroupReq, WorkoutLogReq,
+    };
     use crate::workout_log::workout_log_repo::WorkoutLogRepo;
     use chrono::{NaiveDate, Utc};
     use sqlx::{Sqlite, SqlitePool, Transaction};
@@ -279,10 +282,14 @@ mod tests {
         let repository = WorkoutLogRepo::new();
 
         let today = Utc::now().naive_utc().date();
+        let workout_log_group_req = WorkoutLogGroupReq {
+            date: today,
+            notes: Some("Morning session".to_string()),
+        };
 
         // Create
         let group_id = repository
-            .create_log_group(&mut tx, today, Some("Morning session".to_string()))
+            .create_log_group(&mut tx, workout_log_group_req)
             .await
             .expect("Failed to create log group");
 
@@ -319,8 +326,13 @@ mod tests {
         let (workout_id, workout_exercise_id) = create_workout_exercise(&mut tx).await;
 
         let today = Utc::now().naive_utc().date();
+        let workout_log_group_req = WorkoutLogGroupReq {
+            date: today,
+            notes: None,
+        };
+
         let group_id = repository
-            .create_log_group(&mut tx, today, None)
+            .create_log_group(&mut tx, workout_log_group_req)
             .await
             .unwrap();
 
@@ -338,13 +350,15 @@ mod tests {
         let log_id = repository
             .create_log(&mut tx, log_req)
             .await
-            .expect("Failed to create core log");
+            .expect("Failed to create logs");
 
         // Get
-        let log = repository
-            .get_one_log(&mut *tx, log_id)
+        let logs = repository
+            .get_logs_by_workout_log_group_id(&mut *tx, group_id)
             .await
-            .expect("Failed to get core log");
+            .expect("Failed to get logs");
+        assert_eq!(logs.len(), 1);
+        let log = &logs[0];
         assert_eq!(log.workout_id, workout_id);
         assert_eq!(log.workout_exercise_id, workout_exercise_id);
         assert_eq!(log.workout_log_group_id, group_id);
@@ -358,7 +372,12 @@ mod tests {
             .await
             .expect("Failed to delete core log");
 
-        assert!(repository.get_one_log(&mut *tx, log_id).await.is_err());
+        let found_again = repository
+            .get_logs_by_workout_log_group_id(&mut *tx, group_id)
+            .await
+            .expect("Failed to get logs");
+
+        assert_eq!(found_again.len(), 0);
 
         tx.commit().await.unwrap();
     }
@@ -442,14 +461,22 @@ mod tests {
 
         // Create Log Groups
         let date1 = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
+        let workout_log_group_req1 = WorkoutLogGroupReq {
+            date: date1,
+            notes: None,
+        };
         let g1_id = repository
-            .create_log_group(&mut tx, date1, None)
+            .create_log_group(&mut tx, workout_log_group_req1)
             .await
             .unwrap();
 
         let date2 = NaiveDate::from_ymd_opt(2023, 1, 2).unwrap();
+        let workout_log_group_req2 = WorkoutLogGroupReq {
+            date: date2,
+            notes: None,
+        };
         let g2_id = repository
-            .create_log_group(&mut tx, date2, None)
+            .create_log_group(&mut tx, workout_log_group_req2)
             .await
             .unwrap();
 
@@ -571,8 +598,12 @@ mod tests {
 
         let (workout_id, workout_exercise_id) = create_workout_exercise(&mut tx).await;
         let today = Utc::now().naive_utc().date();
+        let workout_log_group_req = WorkoutLogGroupReq {
+            date: today,
+            notes: None,
+        };
         let group_id = repository
-            .create_log_group(&mut tx, today, None)
+            .create_log_group(&mut tx, workout_log_group_req)
             .await
             .unwrap();
 

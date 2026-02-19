@@ -1,6 +1,29 @@
 use crate::db::pagination_support::HasId;
+use crate::workout_log::workout_log_entity::WorkoutLogGroupEntity;
 use chrono::NaiveDate;
 use sqlx::FromRow;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct WorkoutLogGroupReq {
+    pub date: NaiveDate,
+    pub notes: Option<String>,
+}
+
+pub struct WorkoutLogGroupRes {
+    pub id: u32,
+    pub date: NaiveDate,
+    pub notes: Option<String>,
+}
+
+impl WorkoutLogGroupRes {
+    pub fn from_entity(entity: WorkoutLogGroupEntity) -> Self {
+        Self {
+            id: entity.id,
+            date: entity.date,
+            notes: entity.notes,
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WorkoutLogReq {

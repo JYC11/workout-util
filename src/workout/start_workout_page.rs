@@ -1,9 +1,13 @@
+use crate::workout::workout_service::WorkoutService;
+use crate::workout_log::workout_log_service::WorkoutLogService;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
 
 pub struct StartWorkoutPage {
     pool: Pool<Sqlite>,
     current_workout_id: Option<u32>,
+    workout_service: WorkoutService,
+    workout_log_service: WorkoutLogService,
 }
 
 impl StartWorkoutPage {}
@@ -11,8 +15,10 @@ impl StartWorkoutPage {}
 impl StartWorkoutPage {
     pub fn default(pool: Pool<Sqlite>) -> Self {
         Self {
-            pool,
+            pool: pool.clone(),
             current_workout_id: None,
+            workout_service: WorkoutService::new(pool.clone()),
+            workout_log_service: WorkoutLogService::new(pool.clone()),
         }
     }
 }
