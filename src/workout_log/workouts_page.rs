@@ -142,7 +142,7 @@ impl WorkoutsPage {
         });
     }
 
-    fn fetch_detail(&mut self, id: u32) {
+    pub fn fetch_detail(&mut self, id: u32) {
         self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
         let service = self.service.clone();

@@ -21,6 +21,7 @@ pub enum MainPageState {
 pub enum PageAction {
     None,
     GoToStartWorkout(u32),
+    GoToWorkoutDetails(u32),
 }
 
 pub struct WorkoutUtil {
@@ -95,10 +96,7 @@ impl WorkoutUtil {
                 PageAction::None
             }
             MainPageState::Workouts => self.workouts_page.render_page(ctx, ui),
-            MainPageState::StartWorkout => {
-                self.start_workout_page.render_page(ctx, ui);
-                PageAction::None
-            }
+            MainPageState::StartWorkout => self.start_workout_page.render_page(ctx, ui),
             MainPageState::WorkoutLogs => {
                 self.workout_logs_page.render_page(ctx, ui);
                 PageAction::None
@@ -109,6 +107,10 @@ impl WorkoutUtil {
             PageAction::GoToStartWorkout(workout_id) => {
                 self.start_workout_page.load_workout(workout_id);
                 self.current_page = MainPageState::StartWorkout;
+            }
+            PageAction::GoToWorkoutDetails(workout_id) => {
+                self.workouts_page.fetch_detail(workout_id);
+                self.current_page = MainPageState::Workouts;
             }
             PageAction::None => {}
         }
