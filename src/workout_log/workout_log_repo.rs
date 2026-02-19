@@ -1,5 +1,5 @@
 use crate::db::pagination_support::PaginationParams;
-use crate::workout_log::workout_log_dto::{WorkoutLogReq, WorkoutLogRes};
+use crate::workout_log::workout_log_dto::{WorkoutLogDetailRes, WorkoutLogReq, WorkoutLogRes};
 use crate::workout_log::workout_log_entity::{WorkoutLogEntity, WorkoutLogGroupEntity};
 use chrono::{NaiveDate, Utc};
 use sqlx::{Executor, Sqlite, Transaction};
@@ -108,29 +108,35 @@ impl WorkoutLogRepo {
         Ok(())
     }
 
-    // TODO need to join exercises and core
     pub async fn get_one_log<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
         id: u32,
-    ) -> Result<WorkoutLogRes, String> {
-        let entity: WorkoutLogEntity = sqlx::query_as("SELECT * FROM workout_logs WHERE id = ?")
+    ) -> Result<WorkoutLogDetailRes, String> {
+        let res: WorkoutLogDetailRes = sqlx::query_as(r#"
+                SELECT wl.id,
+                       wlg.id AS workout_log_group_id,
+                       wlg.date AS workout_date,
+                       wo.id AS workout_id,
+                       wo.name AS workout_name,
+                       we.id AS workout_exercise_id,
+                       we.name AS workout_exercise_name,
+                       wl.set_number,
+                       wl.rep_number_or_seconds,
+                       wl.weight,
+                       wl.description
+                FROM workout_logs wl
+                JOIN workout_exercises we ON wl.workout_exercise_id = we.id
+                JOIN workouts wo ON wl.workout_id = wo.id
+                JOIN workout_log_groups wlg ON wl.workout_log_group_id = wlg.id
+                WHERE wl.id = ?
+                "#)
             .bind(id)
             .fetch_optional(executor)
             .await
             .map_err(|e| format!("Database error: {}", e))?
             .ok_or_else(|| "Workout log not found".to_string())?;
-
-        Ok(WorkoutLogRes {
-            id: entity.id,
-            workout_id: entity.workout_id,
-            workout_exercise_id: entity.workout_exercise_id,
-            workout_log_group_id: entity.workout_log_group_id,
-            set_number: entity.set_number,
-            rep_number_or_seconds: entity.rep_number_or_seconds,
-            weight: entity.weight,
-            description: entity.description,
-        })
+        Ok(res)
     }
 
     pub async fn paginate_logs<'e, E: Executor<'e, Database = Sqlite>>(

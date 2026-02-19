@@ -1,5 +1,5 @@
 use chrono::{DateTime, NaiveDate, Utc};
-use sqlx::{Executor, FromRow};
+use sqlx::FromRow;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]
 pub struct WorkoutLogEntity {
