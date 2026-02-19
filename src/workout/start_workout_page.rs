@@ -87,7 +87,7 @@ impl StartWorkoutPage {
                             let sets = (1..=e.sets_target)
                                 .map(|i| ActiveSet {
                                     set_number: i,
-                                    weight: "".to_string(),
+                                    weight: e.working_weight.to_string(),
                                     reps: "".to_string(),
                                     description: "".to_string(),
                                     completed: false,
@@ -130,7 +130,9 @@ impl StartWorkoutPage {
         }
     }
 
-    fn render_workout(&mut self, ui: &mut egui::Ui) {
+    fn render_workout(&mut self, ui: &mut egui::Ui) -> PageAction {
+        let mut page_action = PageAction::None;
+
         if let Some(session) = &mut self.active_session {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 // 1. Render Session Description Edit
@@ -149,6 +151,9 @@ impl StartWorkoutPage {
                         Some(description)
                     };
                 }
+                ui.button("Go to workout").clicked().then(|| {
+                    page_action = PageAction::GoToWorkoutDetails(self.current_workout_id.unwrap());
+                });
                 ui.add_space(10.0);
                 ui.separator();
                 ui.add_space(10.0);
@@ -241,6 +246,7 @@ impl StartWorkoutPage {
         } else {
             ui.label("Loading workout...");
         }
+        page_action
     }
 
     fn render_log_form(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
@@ -374,11 +380,11 @@ impl StartWorkoutPage {
         }
 
         // Main Content
-        self.render_workout(ui);
+        let page_action = self.render_workout(ui);
 
         // Footer Actions
         self.render_log_form(ctx, ui);
 
-        PageAction::None
+        page_action
     }
 }

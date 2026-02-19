@@ -4,7 +4,7 @@ use crate::timer::countdown_timer::CountDownTimer;
 use crate::timer::emom_timer::EMOMTimer;
 use crate::timer::metronome::Metronome;
 use crate::workout::start_workout_page::StartWorkoutPage;
-use crate::workout::workouts_page::WorkoutsPage;
+use crate::workout::workouts_page::{WorkoutsPage, WorkoutsPageState};
 use crate::workout_log::workout_logs_page::WorkoutLogsPage;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
@@ -25,7 +25,6 @@ pub enum PageAction {
 }
 
 pub struct WorkoutUtil {
-    pool: Pool<Sqlite>,
     current_page: MainPageState,
     exercises_page: ExercisesPage,
     workouts_page: WorkoutsPage,
@@ -39,7 +38,6 @@ pub struct WorkoutUtil {
 impl WorkoutUtil {
     pub fn new(_cc: &eframe::CreationContext<'_>, pool: Pool<Sqlite>) -> Self {
         Self {
-            pool: pool.clone(),
             current_page: MainPageState::Home,
             exercises_page: ExercisesPage::default(pool.clone()),
             workouts_page: WorkoutsPage::default(pool.clone()),
@@ -110,6 +108,7 @@ impl WorkoutUtil {
             }
             PageAction::GoToWorkoutDetails(workout_id) => {
                 self.workouts_page.fetch_detail(workout_id);
+                self.workouts_page.state = WorkoutsPageState::DetailsOpenView;
                 self.current_page = MainPageState::Workouts;
             }
             PageAction::None => {}
@@ -119,6 +118,7 @@ impl WorkoutUtil {
     fn render_home(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.heading("Home");
         ui.label("Welcome to Workout Util!");
+        ui.label("Select an option from the menu above.");
     }
 
     fn footer(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {

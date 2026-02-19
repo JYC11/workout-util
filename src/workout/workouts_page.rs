@@ -12,7 +12,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct WorkoutsPage {
     service: WorkoutService,
-    state: WorkoutsPageState,
+    pub state: WorkoutsPageState,
     // Data
     list_items: Vec<WorkoutRes>,
     current_workout: Option<WorkoutRes>,
