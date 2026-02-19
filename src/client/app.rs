@@ -107,8 +107,7 @@ impl WorkoutUtil {
                 self.current_page = MainPageState::StartWorkout;
             }
             PageAction::GoToWorkoutDetails(workout_id) => {
-                self.workouts_page.fetch_detail(workout_id);
-                self.workouts_page.state = WorkoutsPageState::DetailsOpenView;
+                self.workouts_page.open_details_view(workout_id);
                 self.current_page = MainPageState::Workouts;
             }
             PageAction::None => {}

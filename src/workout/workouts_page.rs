@@ -12,7 +12,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct WorkoutsPage {
     service: WorkoutService,
-    pub state: WorkoutsPageState,
+    state: WorkoutsPageState,
     // Data
     list_items: Vec<WorkoutRes>,
     current_workout: Option<WorkoutRes>,
@@ -142,7 +142,7 @@ impl WorkoutsPage {
         });
     }
 
-    pub fn fetch_detail(&mut self, id: u32) {
+    fn fetch_detail(&mut self, id: u32) {
         self.common_ui_state.set_as_loading();
         let sender = self.sender.clone();
         let service = self.service.clone();
@@ -763,6 +763,11 @@ impl WorkoutsPage {
         page_action
     }
 
+    pub fn open_details_view(&mut self, id: u32) {
+        self.fetch_detail(id);
+        self.state = WorkoutsPageState::DetailsOpenView;
+    }
+    
     pub fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) -> PageAction {
         self.handle_async_messages();
 
