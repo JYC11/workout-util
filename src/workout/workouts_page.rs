@@ -1,10 +1,7 @@
 use crate::client::app::PageAction;
 use crate::client::app_utils::CommonUiState;
 use crate::db::pagination_support::{PaginationRes, PaginationState};
-use crate::workout::workout_dto::{
-    WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
-    default_exercise_req, default_workout_req, exercise_res_to_req, workout_to_req,
-};
+use crate::workout::workout_dto::{WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq, default_exercise_req, default_workout_req, exercise_res_to_req, workout_to_req, RestMinuteAndSeconds};
 use crate::workout::workout_service::WorkoutService;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
@@ -393,10 +390,8 @@ impl WorkoutsPage {
                 for ex in &self.current_exercises {
                     ui.label(egui::RichText::new(&ex.code).strong());
                     ui.label(&ex.name);
-                    ui.label(format!(
-                        "{}x{} @ {}kg",
-                        ex.sets_target, ex.reps_or_seconds_target, ex.working_weight
-                    ));
+                    ui.label(ex.target());
+                    ui.label(ex.rest_minutes_and_seconds());
                     ui.end_row();
                 }
             });
@@ -452,6 +447,7 @@ impl WorkoutsPage {
                     ui.label("Code");
                     ui.label("Name");
                     ui.label("Target");
+                    ui.label("Rest");
                     ui.label("Actions");
                     ui.end_row();
 
@@ -461,10 +457,8 @@ impl WorkoutsPage {
                     for ex in &self.current_exercises {
                         ui.label(&ex.code);
                         ui.label(&ex.name);
-                        ui.label(format!(
-                            "{}x{} @ {}",
-                            ex.sets_target, ex.reps_or_seconds_target, ex.working_weight
-                        ));
+                        ui.label(ex.target());
+                        ui.label(ex.rest_minutes_and_seconds());
 
                         ui.horizontal(|ui| {
                             if ui.button("Edit").clicked() {

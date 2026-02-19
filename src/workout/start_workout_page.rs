@@ -1,6 +1,6 @@
 use crate::client::app::PageAction;
 use crate::client::app_utils::CommonUiState;
-use crate::workout::workout_dto::{WorkoutExerciseRes, WorkoutRes};
+use crate::workout::workout_dto::{RestMinuteAndSeconds, WorkoutExerciseRes, WorkoutRes};
 use crate::workout::workout_service::WorkoutService;
 use crate::workout_log::workout_log_dto::{WorkoutLogGroupReq, WorkoutLogReq};
 use crate::workout_log::workout_log_service::WorkoutLogService;
@@ -42,12 +42,9 @@ struct ActiveExercise {
     sets: Vec<ActiveSet>,
 }
 
-impl ActiveExercise {
-    fn rest_minutes_and_seconds(&self) -> (u8, u8) {
-        let rest_period_seconds = self.rest_period_seconds as u64;
-        let minutes = rest_period_seconds / 60;
-        let seconds = rest_period_seconds % 60;
-        (minutes as u8, seconds as u8)
+impl RestMinuteAndSeconds for ActiveExercise {
+    fn rest_minutes_and_seconds(&self) -> String {
+        format!("{}m {}s rest", self.rest_period_seconds / 60, self.rest_period_seconds % 60)
     }
 }
 
@@ -189,8 +186,7 @@ impl StartWorkoutPage {
                                     .strong(),
                                 );
                                 ui.label("|");
-                                let (minutes, seconds) = exercise.rest_minutes_and_seconds();
-                                ui.label(format!("Rest: {}m {}s", minutes, seconds));
+                                ui.label( exercise.rest_minutes_and_seconds());
 
                                 if !exercise.tempo.is_empty() {
                                     ui.label("|");

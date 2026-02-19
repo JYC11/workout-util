@@ -34,6 +34,25 @@ pub struct WorkoutExerciseRes {
     pub description: Option<String>,
 }
 
+pub trait RestMinuteAndSeconds {
+    fn rest_minutes_and_seconds(&self) -> String;
+}
+
+impl RestMinuteAndSeconds for WorkoutExerciseRes {
+    fn rest_minutes_and_seconds(&self) -> String {
+        format!("{}m {}s rest", self.rest_period_seconds / 60, self.rest_period_seconds % 60)
+    }
+}
+
+impl WorkoutExerciseRes {
+    pub fn target(&self) -> String {
+        format!(
+            "{}x{} @ {}",
+            self.sets_target, self.reps_or_seconds_target, self.working_weight
+        )
+    }
+}
+
 impl WorkoutExerciseRes {
     pub fn from_entity(entity: WorkoutExerciseEntity) -> WorkoutExerciseRes {
         Self {
