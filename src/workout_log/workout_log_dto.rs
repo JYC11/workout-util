@@ -32,7 +32,7 @@ pub struct WorkoutLogReq {
     pub workout_log_group_id: u32,
     pub set_number: u8,
     pub rep_number_or_seconds: u8,
-    pub weight: u8,
+    pub weight: u16,
     pub description: Option<String>,
 }
 
@@ -44,7 +44,7 @@ pub struct WorkoutLogRes {
     pub workout_log_group_id: u32,
     pub set_number: u8,
     pub rep_number_or_seconds: u8,
-    pub weight: u8,
+    pub weight: u16,
     pub description: Option<String>,
 }
 
@@ -66,7 +66,7 @@ pub struct WorkoutLogDetailRes {
     pub workout_exercise_name: String,
     pub set_number: u8,
     pub rep_number_or_seconds: u8,
-    pub weight: u8,
+    pub weight: u16,
     pub description: Option<String>,
 }
 

@@ -51,8 +51,8 @@ impl RestMinuteAndSeconds for ActiveExercise {
 #[derive(Debug, Clone)]
 struct ActiveSet {
     set_number: u8,
-    weight: String,
-    reps: String,
+    weight: u16,
+    reps_or_seconds: u8,
     description: String,
     completed: bool,
 }
@@ -92,8 +92,8 @@ impl StartWorkoutPage {
                             let sets = (1..=e.sets_target)
                                 .map(|i| ActiveSet {
                                     set_number: i,
-                                    weight: e.working_weight.to_string(),
-                                    reps: "".to_string(),
+                                    weight: e.working_weight,
+                                    reps_or_seconds: 0,
                                     description: "".to_string(),
                                     completed: false,
                                 })
@@ -218,12 +218,18 @@ impl StartWorkoutPage {
                                     for set in &mut exercise.sets {
                                         ui.label(format!("{}", set.set_number));
 
-                                        let mut w_ui = ui.text_edit_singleline(&mut set.weight);
+                                        let mut w_ui = ui.add(
+                                            egui::DragValue::new(&mut set.weight)
+                                                .speed(0.1)
+                                        );
                                         if set.completed {
                                             w_ui = w_ui.on_hover_text("Set completed");
                                         }
 
-                                        let mut r_ui = ui.text_edit_singleline(&mut set.reps);
+                                        let mut r_ui = ui.add(
+                                            egui::DragValue::new(&mut set.reps_or_seconds)
+                                                .speed(0.1)
+                                        );
                                         if set.completed {
                                             r_ui = r_ui.on_hover_text("Set completed");
                                         }
@@ -299,8 +305,8 @@ impl StartWorkoutPage {
                             workout_exercise_id: ex.workout_exercise_id,
                             workout_log_group_id: 0,
                             set_number: s.set_number,
-                            weight: s.weight.parse().unwrap_or(0),
-                            rep_number_or_seconds: s.reps.parse().unwrap_or(0),
+                            weight: s.weight,
+                            rep_number_or_seconds: s.reps_or_seconds,
                             description: if s.description.is_empty() {
                                 None
                             } else {
