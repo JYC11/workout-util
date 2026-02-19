@@ -7,7 +7,7 @@ use crate::exercise::exercise_dto::{
     LowerBodyIsolationExercise, StraightArmCompoundExercise, UpperBodyIsolationExercise,
     ValidExercise,
 };
-use sqlx::{Executor, FromRow};
+use sqlx::FromRow;
 
 // mapped to a db row
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]

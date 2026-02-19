@@ -111,7 +111,7 @@ impl WorkoutRepo {
     ) -> Result<PaginationRes<WorkoutRes>, String> {
         let mut qb = QueryBuilder::new("SELECT * FROM workouts WHERE 1=1");
         self.pagination_filters(pagination_filters, &mut qb);
-        keyset_paginate(&pagination_params, &mut qb);
+        keyset_paginate(&pagination_params, None, &mut qb);
 
         let mut rows: Vec<WorkoutEntity> = qb
             .build_query_as()
@@ -126,11 +126,7 @@ impl WorkoutRepo {
             .map(|row| Ok(WorkoutRes::from_entity(row.clone())))
             .collect::<Result<Vec<WorkoutRes>, String>>()?;
 
-        Ok(PaginationRes {
-            items,
-            next_cursor: cursors.next_cursor,
-            prev_cursor: cursors.prev_cursor,
-        })
+        Ok(PaginationRes::new(items, cursors))
     }
 
     fn pagination_filters(

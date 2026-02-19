@@ -212,7 +212,7 @@ impl ExerciseRepo {
     ) -> Result<PaginationRes<ExerciseLibraryRes>, String> {
         let mut qb = QueryBuilder::new("SELECT * FROM exercise_library WHERE 1=1");
         self.pagination_filters(filter_req, &mut qb);
-        keyset_paginate(&pagination_params, &mut qb);
+        keyset_paginate(&pagination_params, None, &mut qb);
 
         let mut rows: Vec<ExerciseLibraryRes> = qb
             .build_query_as()
@@ -221,11 +221,7 @@ impl ExerciseRepo {
             .map_err(|e| format!("Failed to paginate exercises: {}", e))?;
 
         let cursors = get_cursors(&pagination_params, &mut rows);
-        Ok(PaginationRes {
-            items: rows,
-            next_cursor: cursors.next_cursor,
-            prev_cursor: cursors.prev_cursor,
-        })
+        Ok(PaginationRes::new(rows, cursors))
     }
 
     fn pagination_filters(

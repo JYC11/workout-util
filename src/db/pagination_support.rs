@@ -21,6 +21,16 @@ pub struct PaginationRes<T> {
     pub prev_cursor: Option<u32>,
 }
 
+impl<T> PaginationRes<T> {
+    pub fn new(items: Vec<T>, cursors: NextAndPrevCursor) -> Self {
+        Self {
+            items,
+            next_cursor: cursors.next_cursor,
+            prev_cursor: cursors.prev_cursor,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct PaginationParams {
     pub limit: u32,
@@ -80,21 +90,31 @@ impl PaginationState {
     }
 }
 
-pub fn keyset_paginate(params: &PaginationParams, qb: &mut QueryBuilder<Sqlite>) {
+pub fn keyset_paginate(
+    params: &PaginationParams,
+    alias: Option<&str>,
+    qb: &mut QueryBuilder<Sqlite>,
+) {
+    let id_column = if let Some(alias) = alias {
+        format!("{}.id", alias)
+    } else {
+        "id".to_string()
+    };
+
     match params.direction {
         PaginationDirection::Forward => {
             if let Some(last_id) = params.cursor {
-                qb.push(" AND id > ");
+                qb.push(format!(" AND {} > ", id_column).as_str());
                 qb.push_bind(last_id);
             }
-            qb.push(" ORDER BY id ASC LIMIT ");
+            qb.push(format!(" ORDER BY {} ASC LIMIT ", id_column).as_str());
         }
         PaginationDirection::Backward => {
             if let Some(first_id) = params.cursor {
-                qb.push(" AND id < ");
+                qb.push(format!(" AND {} < ", id_column).as_str());
                 qb.push_bind(first_id);
             }
-            qb.push(" ORDER BY id DESC LIMIT ");
+            qb.push(format!(" ORDER BY {} DESC LIMIT ", id_column).as_str());
         }
     }
     qb.push_bind(params.limit + 1);
