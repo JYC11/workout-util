@@ -40,7 +40,11 @@ pub trait RestMinuteAndSeconds {
 
 impl RestMinuteAndSeconds for WorkoutExerciseRes {
     fn rest_minutes_and_seconds(&self) -> String {
-        format!("{}m {}s rest", self.rest_period_seconds / 60, self.rest_period_seconds % 60)
+        format!(
+            "{}m {}s rest",
+            self.rest_period_seconds / 60,
+            self.rest_period_seconds % 60
+        )
     }
 }
 

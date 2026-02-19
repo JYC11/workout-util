@@ -70,6 +70,17 @@ pub struct WorkoutLogFilterReq {
 pub struct WorkoutLogGroupFilterReq {
     pub workout_date_gte: Option<NaiveDate>,
     pub workout_date_lte: Option<NaiveDate>,
+    pub notes: Option<String>,
+}
+
+impl Default for WorkoutLogGroupFilterReq {
+    fn default() -> Self {
+        Self {
+            workout_date_gte: None,
+            workout_date_lte: None,
+            notes: None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, FromRow)]

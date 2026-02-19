@@ -1,5 +1,8 @@
 use crate::db::pagination_support::{PaginationParams, PaginationRes};
-use crate::workout_log::workout_log_dto::{WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupPageRes, WorkoutLogGroupReq, WorkoutLogGroupRes, WorkoutLogReq};
+use crate::workout_log::workout_log_dto::{
+    WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupPageRes,
+    WorkoutLogGroupReq, WorkoutLogGroupRes, WorkoutLogReq,
+};
 use crate::workout_log::workout_log_repo::WorkoutLogRepo;
 use sqlx::{Pool, Sqlite};
 
@@ -73,21 +76,6 @@ impl WorkoutLogService {
             .get_logs_by_workout_log_group_id(
                 &mut *self.pool.acquire().await.unwrap(),
                 workout_log_group_id,
-            )
-            .await?)
-    }
-
-    pub async fn paginate_logs(
-        &self,
-        pagination_filters: Option<WorkoutLogFilterReq>,
-        pagination_params: PaginationParams,
-    ) -> Result<PaginationRes<WorkoutLogDetailRes>, String> {
-        Ok(self
-            .repo
-            .paginate_logs(
-                &mut *self.pool.acquire().await.unwrap(),
-                pagination_filters,
-                pagination_params,
             )
             .await?)
     }

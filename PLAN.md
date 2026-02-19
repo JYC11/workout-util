@@ -44,3 +44,6 @@
   - Footer: "Next Exercise" / "Finish Workout".
 - Tab 4: History
   - shows logs of workouts 
+  - page by log groups, has 1 button to see all log groups (get details by log group id)
+  - 1 detail page for log group (shows log group and log entries in 1 detail page)
+  - cannot delete or update log entries

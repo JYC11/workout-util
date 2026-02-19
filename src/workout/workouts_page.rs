@@ -1,7 +1,11 @@
 use crate::client::app::PageAction;
 use crate::client::app_utils::CommonUiState;
 use crate::db::pagination_support::{PaginationRes, PaginationState};
-use crate::workout::workout_dto::{WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq, default_exercise_req, default_workout_req, exercise_res_to_req, workout_to_req, RestMinuteAndSeconds};
+use crate::workout::workout_dto::{
+    RestMinuteAndSeconds, WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes,
+    WorkoutsFilterReq, default_exercise_req, default_workout_req, exercise_res_to_req,
+    workout_to_req,
+};
 use crate::workout::workout_service::WorkoutService;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
@@ -23,9 +27,9 @@ pub struct WorkoutsPage {
     // For Create New Workout mode:
     new_workout_exercises: Vec<WorkoutExerciseReq>,
     // Search/Filter State
-    workout_filters: WorkoutsFilterReq,
+    pagination_filters: WorkoutsFilterReq,
     // Pagination State
-    workout_pagination_state: PaginationState,
+    pagination_state: PaginationState,
     // Async Communication
     receiver: Receiver<WorkoutsPageMsg>,
     sender: Sender<WorkoutsPageMsg>,
@@ -55,8 +59,8 @@ impl WorkoutsPage {
             form_exercise: default_exercise_req(0),
             editing_exercise_id: None,
             new_workout_exercises: Vec::new(),
-            workout_filters: WorkoutsFilterReq::default(),
-            workout_pagination_state: PaginationState::default(),
+            pagination_filters: WorkoutsFilterReq::default(),
+            pagination_state: PaginationState::default(),
             receiver,
             sender,
             common_ui_state: CommonUiState::default(),
@@ -78,8 +82,8 @@ impl WorkoutsPage {
             match msg {
                 WorkoutsPageMsg::ListLoaded(res) => {
                     self.list_items = res.items;
-                    self.workout_pagination_state.next_cursor = res.next_cursor;
-                    self.workout_pagination_state.prev_cursor = res.prev_cursor;
+                    self.pagination_state.next_cursor = res.next_cursor;
+                    self.pagination_state.prev_cursor = res.prev_cursor;
                 }
                 WorkoutsPageMsg::DetailLoaded(workout, exercises) => {
                     self.current_workout = Some(workout.clone());
@@ -122,8 +126,8 @@ impl WorkoutsPage {
         self.common_ui_state.set_as_loading();
 
         let sender = self.sender.clone();
-        let filter = self.workout_filters.clone();
-        let params = self.workout_pagination_state.to_pagination_params();
+        let filter = self.pagination_filters.clone();
+        let params = self.pagination_state.to_pagination_params();
         let ctx = ctx.clone();
         let service = self.service.clone();
         tokio::spawn(async move {
@@ -610,24 +614,24 @@ impl WorkoutsPage {
             // Pagination controls
             ui.horizontal(|ui| {
                 ui.label("Limit:");
-                let mut limit = self.workout_pagination_state.limit;
+                let mut limit = self.pagination_state.limit;
                 if ui
                     .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
                     .changed()
                 {
-                    self.workout_pagination_state.limit = limit;
+                    self.pagination_state.limit = limit;
                     self.trigger_list_refresh();
                 }
 
-                if self.workout_pagination_state.has_previous() {
+                if self.pagination_state.has_previous() {
                     if ui.button("Previous").clicked() {
-                        self.workout_pagination_state.go_backwards();
+                        self.pagination_state.go_backwards();
                         self.trigger_list_refresh();
                     }
                 }
-                if self.workout_pagination_state.has_next() {
+                if self.pagination_state.has_next() {
                     if ui.button("Next").clicked() {
-                        self.workout_pagination_state.go_forwards();
+                        self.pagination_state.go_forwards();
                         self.trigger_list_refresh();
                     }
                 }
@@ -651,24 +655,29 @@ impl WorkoutsPage {
                 // Filters
                 ui.horizontal(|ui| {
                     ui.label("Search:");
-                    let mut name = self.workout_filters.name.clone().unwrap_or_default();
+                    let mut name = self.pagination_filters.name.clone().unwrap_or_default();
                     if ui.text_edit_singleline(&mut name).changed() {
-                        self.workout_filters.name = if name.is_empty() { None } else { Some(name) };
-                        self.workout_pagination_state.reset_pagination();
+                        self.pagination_filters.name =
+                            if name.is_empty() { None } else { Some(name) };
+                        self.pagination_state.reset_pagination();
                         self.trigger_list_refresh();
                     }
 
                     ui.label("Description:");
-                    let mut desc = self.workout_filters.description.clone().unwrap_or_default();
+                    let mut desc = self
+                        .pagination_filters
+                        .description
+                        .clone()
+                        .unwrap_or_default();
                     if ui.text_edit_singleline(&mut desc).changed() {
-                        self.workout_filters.description =
+                        self.pagination_filters.description =
                             if desc.is_empty() { None } else { Some(desc) };
-                        self.workout_pagination_state.reset_pagination();
+                        self.pagination_state.reset_pagination();
                         self.trigger_list_refresh();
                     }
 
                     ui.label("Active:");
-                    let mut active = self.workout_filters.active;
+                    let mut active = self.pagination_filters.active;
                     egui::ComboBox::from_id_salt("workout_active_filter")
                         .selected_text(match active {
                             Some(true) => "Active",
@@ -681,9 +690,9 @@ impl WorkoutsPage {
                             ui.selectable_value(&mut active, Some(false), "Inactive");
                         });
 
-                    if active != self.workout_filters.active {
-                        self.workout_filters.active = active;
-                        self.workout_pagination_state.reset_pagination();
+                    if active != self.pagination_filters.active {
+                        self.pagination_filters.active = active;
+                        self.pagination_state.reset_pagination();
                         self.trigger_list_refresh();
                     }
                 });

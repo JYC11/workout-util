@@ -1,7 +1,10 @@
 use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
-use crate::workout_log::workout_log_dto::{WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupPageRes, WorkoutLogGroupReq, WorkoutLogGroupRes, WorkoutLogReq};
+use crate::workout_log::workout_log_dto::{
+    WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupPageRes,
+    WorkoutLogGroupReq, WorkoutLogGroupRes, WorkoutLogReq,
+};
 use crate::workout_log::workout_log_entity::WorkoutLogGroupEntity;
 use chrono::Utc;
 use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
@@ -144,74 +147,6 @@ impl WorkoutLogRepo {
         Ok(res)
     }
 
-    pub async fn paginate_logs<'e, E: Executor<'e, Database = Sqlite>>(
-        &self,
-        executor: E,
-        pagination_filters: Option<WorkoutLogFilterReq>,
-        pagination_params: PaginationParams,
-    ) -> Result<PaginationRes<WorkoutLogDetailRes>, String> {
-        let mut qb = QueryBuilder::new(
-            r#"
-            SELECT wl.id,
-                   wlg.id AS workout_log_group_id,
-                   wlg.date AS workout_date,
-                   wo.id AS workout_id,
-                   wo.name AS workout_name,
-                   we.id AS workout_exercise_id,
-                   we.name AS workout_exercise_name,
-                   wl.set_number,
-                   wl.rep_number_or_seconds,
-                   wl.weight,
-                   wl.description
-            FROM workout_logs wl
-            JOIN workout_exercises we ON wl.workout_exercise_id = we.id
-            JOIN workouts wo ON wl.workout_id = wo.id
-            JOIN workout_log_groups wlg ON wl.workout_log_group_id = wlg.id
-            WHERE 1=1
-        "#,
-        );
-        self.log_pagination_filters(pagination_filters, &mut qb);
-        keyset_paginate(&pagination_params, Some("wl"), &mut qb);
-
-        let mut rows: Vec<WorkoutLogDetailRes> = qb
-            .build_query_as()
-            .fetch_all(executor)
-            .await
-            .map_err(|e| format!("Database error: {}", e))?;
-
-        let cursors = get_cursors(&pagination_params, &mut rows);
-
-        Ok(PaginationRes::new(rows, cursors))
-    }
-
-    fn log_pagination_filters(
-        &self,
-        filter_req: Option<WorkoutLogFilterReq>,
-        qb: &mut QueryBuilder<Sqlite>,
-    ) {
-        if let Some(req) = filter_req {
-            if let Some(date_gte) = req.workout_date_gte {
-                qb.push(" AND wlg.date >= ");
-                qb.push_bind(date_gte);
-            }
-
-            if let Some(date_lte) = req.workout_date_lte {
-                qb.push(" AND wlg.date <= ");
-                qb.push_bind(date_lte);
-            }
-
-            if let Some(workout_name) = req.workout_name {
-                qb.push(" AND wo.name LIKE ");
-                qb.push_bind(format!("%{}%", workout_name));
-            }
-
-            if let Some(workout_exercise_name) = req.workout_exercise_name {
-                qb.push(" AND we.name LIKE ");
-                qb.push_bind(format!("%{}%", workout_exercise_name));
-            }
-        }
-    }
-
     pub async fn paginate_workout_log_groups<'e, E: Executor<'e, Database = Sqlite>>(
         &self,
         executor: E,
@@ -222,11 +157,11 @@ impl WorkoutLogRepo {
         self.log_group_pagination_filters(pagination_filters, &mut qb);
         keyset_paginate(&pagination_params, None, &mut qb);
 
-        let mut rows: Vec<WorkoutLogGroupPageRes> = qb
-            .build_query_as()
-            .fetch_all(executor)
-            .await
-            .map_err(|e| format!("Database error: {}", e))?;
+        let mut rows: Vec<WorkoutLogGroupPageRes> =
+            qb.build_query_as()
+                .fetch_all(executor)
+                .await
+                .map_err(|e| format!("Database error: {}", e))?;
 
         let cursors = get_cursors(&pagination_params, &mut rows);
 
@@ -248,6 +183,11 @@ impl WorkoutLogRepo {
                 qb.push(" AND date <= ");
                 qb.push_bind(date_lte);
             }
+
+            if let Some(notes) = req.notes {
+                qb.push(" AND notes LIKE ");
+                qb.push_bind(format!("%{}%", notes));
+            }
         }
     }
 }
@@ -257,7 +197,9 @@ mod tests {
     use crate::db::pagination_support::{PaginationDirection, PaginationParams};
     use crate::db::{IN_MEMORY_DB_URL, init_db};
     use crate::enums::{Band, Equipment};
-    use crate::workout_log::workout_log_dto::{WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupReq, WorkoutLogReq};
+    use crate::workout_log::workout_log_dto::{
+        WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupReq, WorkoutLogReq,
+    };
     use crate::workout_log::workout_log_repo::WorkoutLogRepo;
     use chrono::{NaiveDate, Utc};
     use sqlx::{Sqlite, SqlitePool, Transaction};
@@ -418,214 +360,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_paginate_logs() {
-        let pool = setup_db().await;
-        let mut tx = pool.begin().await.unwrap();
-        let repository = WorkoutLogRepo::new();
-
-        // 1. Seed Data
-        // Create Workout A
-        let w_a_id = sqlx::query("INSERT INTO workouts (created_at, name, active) VALUES (?, ?, ?)")
-            .bind(Utc::now())
-            .bind("Workout A")
-            .bind(true)
-            .execute(&mut *tx)
-            .await
-            .unwrap()
-            .last_insert_rowid() as u32;
-
-        // Create Exercise A
-        let we_a_id = sqlx::query(
-            r#"INSERT INTO workout_exercises (
-                    created_at, workout_id, code, name,
-                    sets_target, reps_or_seconds_target, working_weight,
-                    rest_period_seconds, tempo, emom, equipments, bands
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
-        )
-        .bind(Utc::now())
-        .bind(w_a_id)
-        .bind("A1")
-        .bind("Exercise A")
-        .bind(3)
-        .bind(10)
-        .bind(50)
-        .bind(60)
-        .bind("2010")
-        .bind(false)
-        .bind(sqlx::types::Json(vec![Equipment::Barbell]))
-        .bind(sqlx::types::Json(vec![Band::Yellow]))
-        .execute(&mut *tx)
-        .await
-        .unwrap()
-        .last_insert_rowid() as u32;
-
-        // Create Workout B
-        let w_b_id = sqlx::query("INSERT INTO workouts (created_at, name, active) VALUES (?, ?, ?)")
-            .bind(Utc::now())
-            .bind("Workout B")
-            .bind(true)
-            .execute(&mut *tx)
-            .await
-            .unwrap()
-            .last_insert_rowid() as u32;
-
-        // Create Exercise B
-        let we_b_id = sqlx::query(
-            r#"INSERT INTO workout_exercises (
-                    created_at, workout_id, code, name,
-                    sets_target, reps_or_seconds_target, working_weight,
-                    rest_period_seconds, tempo, emom, equipments, bands
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"#,
-        )
-        .bind(Utc::now())
-        .bind(w_b_id)
-        .bind("B1")
-        .bind("Exercise B")
-        .bind(3)
-        .bind(10)
-        .bind(50)
-        .bind(60)
-        .bind("2010")
-        .bind(false)
-        .bind(sqlx::types::Json(vec![Equipment::Dumbbells]))
-        .bind(sqlx::types::Json(vec![Band::Red]))
-        .execute(&mut *tx)
-        .await
-        .unwrap()
-        .last_insert_rowid() as u32;
-
-        // Create Log Groups
-        let date1 = NaiveDate::from_ymd_opt(2023, 1, 1).unwrap();
-        let workout_log_group_req1 = WorkoutLogGroupReq {
-            date: date1,
-            notes: None,
-        };
-        let g1_id = repository
-            .create_log_group(&mut tx, workout_log_group_req1)
-            .await
-            .unwrap();
-
-        let date2 = NaiveDate::from_ymd_opt(2023, 1, 2).unwrap();
-        let workout_log_group_req2 = WorkoutLogGroupReq {
-            date: date2,
-            notes: None,
-        };
-        let g2_id = repository
-            .create_log_group(&mut tx, workout_log_group_req2)
-            .await
-            .unwrap();
-
-        // Create Logs
-        // 2 logs for Group 1 (Workout A)
-        for i in 1..=2 {
-            repository
-                .create_log(
-                    &mut tx,
-                    WorkoutLogReq {
-                        workout_id: w_a_id,
-                        workout_exercise_id: we_a_id,
-                        workout_log_group_id: g1_id,
-                        set_number: i,
-                        rep_number_or_seconds: 10,
-                        weight: 100,
-                        description: None,
-                    },
-                )
-                .await
-                .unwrap();
-        }
-
-        // 3 logs for Group 2 (Workout B)
-        for i in 1..=3 {
-            repository
-                .create_log(
-                    &mut tx,
-                    WorkoutLogReq {
-                        workout_id: w_b_id,
-                        workout_exercise_id: we_b_id,
-                        workout_log_group_id: g2_id,
-                        set_number: i,
-                        rep_number_or_seconds: 12,
-                        weight: 120,
-                        description: None,
-                    },
-                )
-                .await
-                .unwrap();
-        }
-
-        // 2. Test Simple Pagination
-        let params = PaginationParams {
-            limit: 2,
-            cursor: None,
-            direction: PaginationDirection::Forward,
-        };
-        let res = repository
-            .paginate_logs(&mut *tx, None, params)
-            .await
-            .expect("Pagination failed");
-
-        assert_eq!(res.items.len(), 2);
-        assert_eq!(res.items[0].workout_name, "Workout A");
-        assert!(res.next_cursor.is_some());
-
-        // 3. Test Next Page
-        let params_next = PaginationParams {
-            limit: 2,
-            cursor: res.next_cursor,
-            direction: PaginationDirection::Forward,
-        };
-        let res_next = repository
-            .paginate_logs(&mut *tx, None, params_next)
-            .await
-            .expect("Pagination page 2 failed");
-
-        assert_eq!(res_next.items.len(), 2);
-        assert_eq!(res_next.items[0].workout_name, "Workout B");
-
-        // 4. Test Filter by Date (>= 2023-01-02)
-        let filter_date = WorkoutLogFilterReq {
-            workout_date_gte: Some(date2),
-            workout_date_lte: None,
-            workout_name: None,
-            workout_exercise_name: None,
-        };
-        let params_all = PaginationParams {
-            limit: 10,
-            cursor: None,
-            direction: PaginationDirection::Forward,
-        };
-        let res_filtered = repository
-            .paginate_logs(&mut *tx, Some(filter_date), params_all.clone())
-            .await
-            .expect("Filtered pagination failed");
-
-        assert_eq!(res_filtered.items.len(), 3);
-        for item in res_filtered.items {
-            assert_eq!(item.workout_date, date2);
-        }
-
-        // 5. Test Filter by Workout Name ("Workout A")
-        let filter_name = WorkoutLogFilterReq {
-            workout_date_gte: None,
-            workout_date_lte: None,
-            workout_name: Some("Workout A".to_string()),
-            workout_exercise_name: None,
-        };
-        let res_name = repository
-            .paginate_logs(&mut *tx, Some(filter_name), params_all)
-            .await
-            .expect("Name filter failed");
-
-        assert_eq!(res_name.items.len(), 2);
-        for item in res_name.items {
-            assert_eq!(item.workout_name, "Workout A");
-        }
-
-        tx.commit().await.unwrap();
-    }
-
-    #[tokio::test]
     async fn test_paginate_workout_log_groups() {
         let pool = setup_db().await;
         let mut tx = pool.begin().await.unwrap();
@@ -637,30 +371,21 @@ mod tests {
             date: date1,
             notes: Some("Note 1".to_string()),
         };
-        let _g1_id = repository
-            .create_log_group(&mut tx, req1)
-            .await
-            .unwrap();
+        let _g1_id = repository.create_log_group(&mut tx, req1).await.unwrap();
 
         let date2 = NaiveDate::from_ymd_opt(2023, 1, 2).unwrap();
         let req2 = WorkoutLogGroupReq {
             date: date2,
             notes: Some("Note 2".to_string()),
         };
-        let _g2_id = repository
-            .create_log_group(&mut tx, req2)
-            .await
-            .unwrap();
+        let _g2_id = repository.create_log_group(&mut tx, req2).await.unwrap();
 
         let date3 = NaiveDate::from_ymd_opt(2023, 1, 3).unwrap();
         let req3 = WorkoutLogGroupReq {
             date: date3,
             notes: Some("Note 3".to_string()),
         };
-        let _g3_id = repository
-            .create_log_group(&mut tx, req3)
-            .await
-            .unwrap();
+        let _g3_id = repository.create_log_group(&mut tx, req3).await.unwrap();
 
         // 2. Test Simple Pagination
         let params = PaginationParams {
@@ -695,6 +420,7 @@ mod tests {
         let filter_date = WorkoutLogGroupFilterReq {
             workout_date_gte: Some(date2),
             workout_date_lte: None,
+            notes: None,
         };
         let params_all = PaginationParams {
             limit: 10,

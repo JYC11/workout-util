@@ -7,6 +7,7 @@ use crate::workout_log::workout_log_service::WorkoutLogService;
 use chrono::Local;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
+use std::fmt::format;
 use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct StartWorkoutPage {
@@ -44,7 +45,11 @@ struct ActiveExercise {
 
 impl RestMinuteAndSeconds for ActiveExercise {
     fn rest_minutes_and_seconds(&self) -> String {
-        format!("{}m {}s rest", self.rest_period_seconds / 60, self.rest_period_seconds % 60)
+        format!(
+            "{}m {}s rest",
+            self.rest_period_seconds / 60,
+            self.rest_period_seconds % 60
+        )
     }
 }
 
@@ -115,7 +120,7 @@ impl StartWorkoutPage {
                     self.active_session = Some(ActiveSession {
                         name: workout.name.clone(),
                         exercises: active_exercises,
-                        description: None,
+                        description: format!("Workout name: {}", workout.name).into(),
                     });
                 }
                 StartWorkoutsPageMsg::Saved => {
@@ -186,7 +191,7 @@ impl StartWorkoutPage {
                                     .strong(),
                                 );
                                 ui.label("|");
-                                ui.label( exercise.rest_minutes_and_seconds());
+                                ui.label(exercise.rest_minutes_and_seconds());
 
                                 if !exercise.tempo.is_empty() {
                                     ui.label("|");
@@ -218,17 +223,15 @@ impl StartWorkoutPage {
                                     for set in &mut exercise.sets {
                                         ui.label(format!("{}", set.set_number));
 
-                                        let mut w_ui = ui.add(
-                                            egui::DragValue::new(&mut set.weight)
-                                                .speed(0.1)
-                                        );
+                                        let mut w_ui = ui
+                                            .add(egui::DragValue::new(&mut set.weight).speed(0.1));
                                         if set.completed {
                                             w_ui = w_ui.on_hover_text("Set completed");
                                         }
 
                                         let mut r_ui = ui.add(
                                             egui::DragValue::new(&mut set.reps_or_seconds)
-                                                .speed(0.1)
+                                                .speed(0.1),
                                         );
                                         if set.completed {
                                             r_ui = r_ui.on_hover_text("Set completed");
