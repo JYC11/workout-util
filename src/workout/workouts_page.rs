@@ -95,13 +95,13 @@ impl WorkoutsPage {
                     self.common_ui_state.show_success("Saved successfully");
                     if matches!(self.state, WorkoutsPageState::CreateNew) {
                         self.state = WorkoutsPageState::DetailsClosed;
-                        self.trigger_list_refresh();
                     } else if matches!(self.state, WorkoutsPageState::DetailsEditView) {
                         // If we were editing, refresh the details
                         if let Some(w) = &self.current_workout {
                             self.fetch_detail(w.id);
                         }
                     }
+                    self.trigger_list_refresh();
                 }
                 WorkoutsPageMsg::Deleted => {
                     self.common_ui_state.show_success("Deleted successfully");
