@@ -8,6 +8,7 @@ use crate::workout::workout_dto::{
 };
 use crate::workout::workout_service::WorkoutService;
 use eframe::egui;
+use eframe::egui::Ui;
 use sqlx::{Pool, Sqlite};
 use std::sync::mpsc::{Receiver, Sender, channel};
 
@@ -612,32 +613,8 @@ impl WorkoutsPage {
 
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
             // Pagination controls
-            ui.horizontal(|ui| {
-                ui.label("Limit:");
-                let mut limit = self.pagination_state.limit;
-                if ui
-                    .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
-                    .changed()
-                {
-                    self.pagination_state.limit = limit;
-                    self.trigger_list_refresh();
-                }
-
-                if self.pagination_state.has_previous() {
-                    if ui.button("Previous").clicked() {
-                        self.pagination_state.go_backwards();
-                        self.trigger_list_refresh();
-                    }
-                }
-                if self.pagination_state.has_next() {
-                    if ui.button("Next").clicked() {
-                        self.pagination_state.go_forwards();
-                        self.trigger_list_refresh();
-                    }
-                }
-            });
+            self.render_pagination(ui);
             ui.separator();
-
             ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
                 ui.horizontal(|ui| {
                     ui.heading("Workouts");
@@ -651,52 +628,7 @@ impl WorkoutsPage {
                     });
                 });
                 ui.separator();
-
-                // Filters
-                ui.horizontal(|ui| {
-                    ui.label("Search:");
-                    let mut name = self.pagination_filters.name.clone().unwrap_or_default();
-                    if ui.text_edit_singleline(&mut name).changed() {
-                        self.pagination_filters.name =
-                            if name.is_empty() { None } else { Some(name) };
-                        self.pagination_state.reset_pagination();
-                        self.trigger_list_refresh();
-                    }
-
-                    ui.label("Description:");
-                    let mut desc = self
-                        .pagination_filters
-                        .description
-                        .clone()
-                        .unwrap_or_default();
-                    if ui.text_edit_singleline(&mut desc).changed() {
-                        self.pagination_filters.description =
-                            if desc.is_empty() { None } else { Some(desc) };
-                        self.pagination_state.reset_pagination();
-                        self.trigger_list_refresh();
-                    }
-
-                    ui.label("Active:");
-                    let mut active = self.pagination_filters.active;
-                    egui::ComboBox::from_id_salt("workout_active_filter")
-                        .selected_text(match active {
-                            Some(true) => "Active",
-                            Some(false) => "Inactive",
-                            None => "All",
-                        })
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut active, None, "All");
-                            ui.selectable_value(&mut active, Some(true), "Active");
-                            ui.selectable_value(&mut active, Some(false), "Inactive");
-                        });
-
-                    if active != self.pagination_filters.active {
-                        self.pagination_filters.active = active;
-                        self.pagination_state.reset_pagination();
-                        self.trigger_list_refresh();
-                    }
-                });
-
+                self.render_filters(ui);
                 ui.separator();
 
                 enum ListAction {
@@ -764,6 +696,78 @@ impl WorkoutsPage {
         });
 
         page_action
+    }
+
+    fn render_filters(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+            ui.label("Search:");
+            let mut name = self.pagination_filters.name.clone().unwrap_or_default();
+            if ui.text_edit_singleline(&mut name).changed() {
+                self.pagination_filters.name = if name.is_empty() { None } else { Some(name) };
+                self.pagination_state.reset_pagination();
+                self.trigger_list_refresh();
+            }
+
+            ui.label("Description:");
+            let mut desc = self
+                .pagination_filters
+                .description
+                .clone()
+                .unwrap_or_default();
+            if ui.text_edit_singleline(&mut desc).changed() {
+                self.pagination_filters.description =
+                    if desc.is_empty() { None } else { Some(desc) };
+                self.pagination_state.reset_pagination();
+                self.trigger_list_refresh();
+            }
+
+            ui.label("Active:");
+            let mut active = self.pagination_filters.active;
+            egui::ComboBox::from_id_salt("workout_active_filter")
+                .selected_text(match active {
+                    Some(true) => "Active",
+                    Some(false) => "Inactive",
+                    None => "All",
+                })
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut active, None, "All");
+                    ui.selectable_value(&mut active, Some(true), "Active");
+                    ui.selectable_value(&mut active, Some(false), "Inactive");
+                });
+
+            if active != self.pagination_filters.active {
+                self.pagination_filters.active = active;
+                self.pagination_state.reset_pagination();
+                self.trigger_list_refresh();
+            }
+        });
+    }
+
+    fn render_pagination(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            let mut limit = self.pagination_state.limit;
+            if ui
+                .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
+                .changed()
+            {
+                self.pagination_state.limit = limit;
+                self.trigger_list_refresh();
+            }
+
+            if self.pagination_state.has_previous() {
+                if ui.button("← Previous").clicked() {
+                    self.pagination_state.go_backwards();
+                    self.trigger_list_refresh();
+                }
+            }
+
+            if self.pagination_state.has_next() {
+                if ui.button("Next →").clicked() {
+                    self.pagination_state.go_forwards();
+                    self.trigger_list_refresh();
+                }
+            }
+        });
     }
 
     pub fn open_details_view(&mut self, id: u32) {

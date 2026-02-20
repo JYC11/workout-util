@@ -78,6 +78,7 @@ pub struct WorkoutLogFilterReq {
     pub workout_exercise_name: Option<String>,
 }
 
+#[derive(Clone)]
 pub struct WorkoutLogGroupFilterReq {
     pub workout_date_gte: Option<NaiveDate>,
     pub workout_date_lte: Option<NaiveDate>,

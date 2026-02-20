@@ -499,6 +499,20 @@ impl ExercisesPage {
 
     fn render_filters(&mut self, ui: &mut egui::Ui) {
         let mut changed = false;
+        let mut name = if let Some(name) = &self.pagination_filters.name {
+            name.clone()
+        } else {
+            "".to_string()
+        };
+
+        ui.horizontal(|ui| {
+            ui.label("Search:");
+            if ui.text_edit_singleline(&mut name).changed() {
+                self.pagination_filters.name = Some(name.clone());
+                self.pagination_state.reset_pagination();
+                changed = true;
+            }
+        });
 
         ui.collapsing("Filters", |ui| {
             egui::Grid::new("filters_grid")
@@ -596,31 +610,7 @@ impl ExercisesPage {
 
     fn render_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Limit:");
-                let mut limit = self.pagination_state.limit;
-                if ui
-                    .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
-                    .changed()
-                {
-                    self.pagination_state.limit = limit;
-                    self.trigger_list_refresh();
-                }
-
-                if self.pagination_state.has_previous() {
-                    if ui.button("Previous").clicked() {
-                        self.pagination_state.go_backwards();
-                        self.trigger_list_refresh();
-                    }
-                }
-
-                if self.pagination_state.has_next() {
-                    if ui.button("Next").clicked() {
-                        self.pagination_state.go_forwards();
-                        self.trigger_list_refresh();
-                    }
-                }
-            });
+            self.render_pagination(ui);
             ui.separator();
 
             ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
@@ -634,21 +624,6 @@ impl ExercisesPage {
                     });
                 });
                 ui.separator();
-
-                let mut name = if let Some(name) = &self.pagination_filters.name {
-                    name.clone()
-                } else {
-                    "".to_string()
-                };
-
-                ui.horizontal(|ui| {
-                    ui.label("Search:");
-                    if ui.text_edit_singleline(&mut name).changed() {
-                        self.pagination_filters.name = Some(name.clone());
-                        self.pagination_state.reset_pagination();
-                        self.trigger_list_refresh();
-                    }
-                });
 
                 self.render_filters(ui);
 
@@ -719,6 +694,34 @@ impl ExercisesPage {
                     }
                 }
             });
+        });
+    }
+
+    fn render_pagination(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label("Limit:");
+            let mut limit = self.pagination_state.limit;
+            if ui
+                .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
+                .changed()
+            {
+                self.pagination_state.limit = limit;
+                self.trigger_list_refresh();
+            }
+
+            if self.pagination_state.has_previous() {
+                if ui.button("Previous").clicked() {
+                    self.pagination_state.go_backwards();
+                    self.trigger_list_refresh();
+                }
+            }
+
+            if self.pagination_state.has_next() {
+                if ui.button("Next").clicked() {
+                    self.pagination_state.go_forwards();
+                    self.trigger_list_refresh();
+                }
+            }
         });
     }
 
