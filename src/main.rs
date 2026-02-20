@@ -2,7 +2,6 @@ use crate::client::run_app;
 use std::error::Error;
 
 pub mod client;
-mod config;
 mod db;
 pub mod enums;
 pub mod exercise;

@@ -1,5 +1,6 @@
 use rodio::source::SineWave;
 use rodio::{OutputStream, OutputStreamBuilder, Sink, Source};
+#[cfg(test)]
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 

@@ -10,7 +10,7 @@ pub async fn run_app() -> Result<(), Box<dyn Error>> {
     let pool = init_db(DEFAULT_DB_URL).await;
 
     let native_options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([1600.0, 1200.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([1800.0, 1200.0]),
         ..Default::default()
     };
 

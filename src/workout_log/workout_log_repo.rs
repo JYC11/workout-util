@@ -2,8 +2,8 @@ use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
 use crate::workout_log::workout_log_dto::{
-    WorkoutLogDetailRes, WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupPageRes,
-    WorkoutLogGroupReq, WorkoutLogGroupRes, WorkoutLogReq,
+    WorkoutLogDetailRes, WorkoutLogGroupFilterReq, WorkoutLogGroupPageRes, WorkoutLogGroupReq,
+    WorkoutLogGroupRes, WorkoutLogReq,
 };
 use crate::workout_log::workout_log_entity::WorkoutLogGroupEntity;
 use chrono::Utc;
@@ -198,7 +198,7 @@ mod tests {
     use crate::db::{IN_MEMORY_DB_URL, init_db};
     use crate::enums::{Band, Equipment};
     use crate::workout_log::workout_log_dto::{
-        WorkoutLogFilterReq, WorkoutLogGroupFilterReq, WorkoutLogGroupReq, WorkoutLogReq,
+        WorkoutLogGroupFilterReq, WorkoutLogGroupReq, WorkoutLogReq,
     };
     use crate::workout_log::workout_log_repo::WorkoutLogRepo;
     use chrono::{NaiveDate, Utc};

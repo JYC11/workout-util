@@ -4,9 +4,11 @@ use crate::timer::countdown_timer::CountDownTimer;
 use crate::timer::emom_timer::EMOMTimer;
 use crate::timer::metronome::Metronome;
 use crate::workout::start_workout_page::StartWorkoutPage;
-use crate::workout::workouts_page::{WorkoutsPage, WorkoutsPageState};
+use crate::workout::workouts_page::WorkoutsPage;
 use crate::workout_log::workout_logs_page::WorkoutLogsPage;
 use eframe::egui;
+use egui::FontId;
+use egui::TextStyle;
 use sqlx::{Pool, Sqlite};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -86,7 +88,7 @@ impl WorkoutUtil {
     fn render_page(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         let action = match self.current_page {
             MainPageState::Home => {
-                self.render_home(ctx, ui);
+                self.render_home(ui);
                 PageAction::None
             }
             MainPageState::Exercises => {
@@ -114,7 +116,7 @@ impl WorkoutUtil {
         }
     }
 
-    fn render_home(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
+    fn render_home(&mut self, ui: &mut egui::Ui) {
         ui.heading("Home");
         ui.label("Welcome to Workout Util!");
         ui.label("Select an option from the menu above.");
@@ -256,6 +258,23 @@ impl WorkoutUtil {
 
 impl eframe::App for WorkoutUtil {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        ctx.set_visuals(egui::Visuals::dark());
+
+        let mut style = (*ctx.style()).clone();
+
+        style.text_styles = [
+            (TextStyle::Heading, FontId::proportional(28.0)),
+            (TextStyle::Body, FontId::proportional(18.0)),
+            (TextStyle::Monospace, FontId::monospace(16.0)),
+            (TextStyle::Button, FontId::proportional(18.0)),
+            (TextStyle::Small, FontId::proportional(14.0)),
+        ]
+            .into();
+        style.spacing.item_spacing = egui::vec2(10.0, 8.0);
+        style.spacing.button_padding = egui::vec2(8.0, 4.0);
+
+        ctx.set_style(style);
+
         egui::TopBottomPanel::top("top_panel")
             .default_height(60.0)
             .show(ctx, |ui| {
@@ -263,7 +282,7 @@ impl eframe::App for WorkoutUtil {
             });
 
         egui::TopBottomPanel::bottom("bottom_panel")
-            .default_height(60.0)
+            .default_height(100.0)
             .show(ctx, |ui| {
                 self.footer(ctx, ui);
             });

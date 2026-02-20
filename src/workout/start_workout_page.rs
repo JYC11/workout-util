@@ -4,10 +4,8 @@ use crate::workout::workout_dto::{RestMinuteAndSeconds, WorkoutExerciseRes, Work
 use crate::workout::workout_service::WorkoutService;
 use crate::workout_log::workout_log_dto::{WorkoutLogGroupReq, WorkoutLogReq};
 use crate::workout_log::workout_log_service::WorkoutLogService;
-use chrono::Local;
 use eframe::egui;
 use sqlx::{Pool, Sqlite};
-use std::fmt::format;
 use std::sync::mpsc::{Receiver, Sender, channel};
 
 pub struct StartWorkoutPage {
