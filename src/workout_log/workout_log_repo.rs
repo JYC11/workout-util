@@ -79,12 +79,13 @@ impl WorkoutLogRepo {
         let result = sqlx::query(
             r#"INSERT INTO workout_logs (
             workout_id, workout_exercise_id, workout_log_group_id,
-            set_number, rep_number_or_seconds, weight, description
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
+            exercise_name, set_number, rep_number_or_seconds, weight, description
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(req.workout_id)
         .bind(req.workout_exercise_id)
         .bind(req.workout_log_group_id)
+        .bind(req.exercise_name)
         .bind(req.set_number)
         .bind(req.rep_number_or_seconds)
         .bind(req.weight)
@@ -126,14 +127,13 @@ impl WorkoutLogRepo {
                        wlg.date AS workout_date,
                        wo.id AS workout_id,
                        wo.name AS workout_name,
-                       we.id AS workout_exercise_id,
-                       we.name AS workout_exercise_name,
+                       wl.workout_exercise_id,
+                       wl.exercise_name AS workout_exercise_name,
                        wl.set_number,
                        wl.rep_number_or_seconds,
                        wl.weight,
                        wl.description
                 FROM workout_logs wl
-                JOIN workout_exercises we ON wl.workout_exercise_id = we.id
                 JOIN workouts wo ON wl.workout_id = wo.id
                 JOIN workout_log_groups wlg ON wl.workout_log_group_id = wlg.id
                 WHERE wl.workout_log_group_id = ?
@@ -318,6 +318,7 @@ mod tests {
             workout_id,
             workout_exercise_id,
             workout_log_group_id: group_id,
+            exercise_name: "Dummy Ex".to_string(),
             set_number: 2,
             rep_number_or_seconds: 8,
             weight: 95,
@@ -462,6 +463,7 @@ mod tests {
             workout_id,
             workout_exercise_id,
             workout_log_group_id: group_id,
+            exercise_name: "Dummy Ex".to_string(),
             set_number: 1,
             rep_number_or_seconds: 10,
             weight: 80,

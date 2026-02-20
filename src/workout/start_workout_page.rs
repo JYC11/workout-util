@@ -88,11 +88,17 @@ impl ActiveSet {
         }
     }
 
-    fn to_workout_log_req(&self, workout_id: u32, workout_exercise_id: u32) -> WorkoutLogReq {
+    fn to_workout_log_req(
+        &self,
+        workout_id: u32,
+        workout_exercise_id: u32,
+        exercise_name: String,
+    ) -> WorkoutLogReq {
         WorkoutLogReq {
             workout_id,
             workout_exercise_id,
             workout_log_group_id: 0,
+            exercise_name,
             set_number: self.set_number,
             weight: self.weight,
             rep_number_or_seconds: self.reps_or_seconds,
@@ -328,7 +334,11 @@ impl StartWorkoutPage {
                 .iter()
                 .flat_map(|ex| {
                     ex.sets.iter().filter(|s| s.completed).map(move |s| {
-                        s.to_workout_log_req(current_workout_id, ex.workout_exercise_id)
+                        s.to_workout_log_req(
+                            current_workout_id,
+                            ex.workout_exercise_id,
+                            ex.exercise_name.clone(),
+                        )
                     })
                 })
                 .collect();

@@ -614,12 +614,13 @@ mod tests {
         sqlx::query(
             r#"INSERT INTO workout_logs (
                 workout_id, workout_exercise_id, workout_log_group_id,
-                set_number, rep_number_or_seconds, weight, description
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)"#,
+                exercise_name, set_number, rep_number_or_seconds, weight, description
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"#,
         )
         .bind(workout_id)
         .bind(ex_id)
         .bind(log_group_id as u32)
+        .bind("Pushups")
         .bind(1u8)
         .bind(8u8)
         .bind(100u32)

@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS workout_logs (
     workout_id INTEGER NOT NULL,
     workout_exercise_id INTEGER NOT NULL,
     workout_log_group_id INTEGER NOT NULL,
+    exercise_name TEXT NOT NULL,
     set_number INTEGER NOT NULL,
     rep_number_or_seconds INTEGER NOT NULL,
     weight INTEGER NOT NULL,

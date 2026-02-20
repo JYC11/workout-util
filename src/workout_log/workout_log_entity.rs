@@ -7,6 +7,7 @@ pub struct WorkoutLogEntity {
     pub workout_id: u32,           // fk to WorkoutEntity
     pub workout_exercise_id: u32,  // fk to WorkoutExerciseEntity
     pub workout_log_group_id: u32, // fk to WorkoutLogGroupEntity
+    pub exercise_name: String,
     pub set_number: u8,
     pub rep_number_or_seconds: u8,
     pub weight: u8,
