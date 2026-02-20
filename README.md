@@ -15,3 +15,8 @@
 - learn intuition behind client side development (it's all about state management!) ✅
 - use LLMs extensively during development to get more practice using LLMs ✅
 - learn about egui, sqlx ✅
+
+## Next Steps
+- actually use the app and see where it's needs improvement
+- statistics?
+- something for the home page?
