@@ -1,3 +1,4 @@
+use crate::db::pagination_support::PaginationState;
 use eframe::egui;
 use std::time::{Duration, Instant};
 
@@ -119,4 +120,37 @@ pub fn filter_combo<T: Copy + PartialEq + std::fmt::Debug + 'static>(
     } else {
         false
     }
+}
+
+pub fn render_pagination(ui: &mut egui::Ui, pagination_state: &mut PaginationState) -> bool {
+    let mut refresh_needed = false;
+
+    ui.horizontal(|ui| {
+        ui.label("Limit:");
+        let mut limit = pagination_state.limit;
+        if ui
+            .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
+            .changed()
+        {
+            pagination_state.limit = limit;
+            pagination_state.reset_pagination();
+            refresh_needed = true;
+        }
+
+        if pagination_state.has_previous() {
+            if ui.button("Previous").clicked() {
+                pagination_state.go_backwards();
+                refresh_needed = true;
+            }
+        }
+
+        if pagination_state.has_next() {
+            if ui.button("Next").clicked() {
+                pagination_state.go_forwards();
+                refresh_needed = true;
+            }
+        }
+    });
+
+    refresh_needed
 }

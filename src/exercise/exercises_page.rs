@@ -1,5 +1,5 @@
 use crate::client::app_utils;
-use crate::client::app_utils::{CommonUiState, filter_combo};
+use crate::client::app_utils::{CommonUiState, filter_combo, render_pagination};
 use crate::db::pagination_support::{PaginationRes, PaginationState};
 use crate::enums::{
     CompoundOrIsolation, DynamicOrStatic, Grip, GripWidth, LeverVariation, PushOrPull,
@@ -610,7 +610,9 @@ impl ExercisesPage {
 
     fn render_list(&mut self, ctx: &egui::Context, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
-            self.render_pagination(ui);
+            if render_pagination(ui, &mut self.pagination_state) {
+                self.trigger_list_refresh();
+            }
             ui.separator();
 
             ui.with_layout(egui::Layout::top_down(egui::Align::Min), |ui| {
@@ -694,34 +696,6 @@ impl ExercisesPage {
                     }
                 }
             });
-        });
-    }
-
-    fn render_pagination(&mut self, ui: &mut egui::Ui) {
-        ui.horizontal(|ui| {
-            ui.label("Limit:");
-            let mut limit = self.pagination_state.limit;
-            if ui
-                .add(egui::DragValue::new(&mut limit).speed(1.0).range(1..=100))
-                .changed()
-            {
-                self.pagination_state.limit = limit;
-                self.trigger_list_refresh();
-            }
-
-            if self.pagination_state.has_previous() {
-                if ui.button("Previous").clicked() {
-                    self.pagination_state.go_backwards();
-                    self.trigger_list_refresh();
-                }
-            }
-
-            if self.pagination_state.has_next() {
-                if ui.button("Next").clicked() {
-                    self.pagination_state.go_forwards();
-                    self.trigger_list_refresh();
-                }
-            }
         });
     }
 

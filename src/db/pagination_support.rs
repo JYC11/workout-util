@@ -60,7 +60,10 @@ impl Default for PaginationState {
 
 impl PaginationState {
     pub fn reset_pagination(&mut self) {
+        self.current_cursor = None;
         self.next_cursor = None;
+        self.prev_cursor = None;
+        self.direction = PaginationDirection::Forward;
     }
 
     pub fn has_previous(&self) -> bool {
