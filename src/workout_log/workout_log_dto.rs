@@ -9,6 +9,15 @@ pub struct WorkoutLogGroupReq {
     pub notes: Option<String>,
 }
 
+impl WorkoutLogGroupReq {
+    pub fn new(notes: Option<String>) -> Self {
+        Self {
+            date: chrono::Local::now().date_naive(),
+            notes,
+        }
+    }
+}
+
 pub struct WorkoutLogGroupRes {
     pub id: u32,
     pub date: NaiveDate,
@@ -29,6 +38,7 @@ impl WorkoutLogGroupRes {
 pub struct WorkoutLogGroupPageRes {
     pub id: u32,
     pub date: NaiveDate,
+    pub notes: Option<String>,
 }
 
 impl HasId for WorkoutLogGroupPageRes {

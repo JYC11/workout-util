@@ -43,6 +43,21 @@ struct ActiveExercise {
     sets: Vec<ActiveSet>,
 }
 
+impl ActiveExercise {
+    fn new(res: WorkoutExerciseRes, active_sets: Vec<ActiveSet>) -> Self {
+        Self {
+            workout_exercise_id: res.id,
+            exercise_name: res.name,
+            reps_or_seconds_target: res.reps_or_seconds_target,
+            working_weight: res.working_weight,
+            rest_period_seconds: res.rest_period_seconds,
+            tempo: res.tempo,
+            emom: res.emom,
+            sets: active_sets,
+        }
+    }
+}
+
 impl RestMinuteAndSeconds for ActiveExercise {
     fn rest_minutes_and_seconds(&self) -> String {
         format!(
@@ -60,6 +75,34 @@ struct ActiveSet {
     reps_or_seconds: u8,
     description: String,
     completed: bool,
+}
+
+impl ActiveSet {
+    fn new(set_number: u8, weight: u16) -> Self {
+        Self {
+            set_number,
+            weight,
+            reps_or_seconds: 0,
+            description: "".to_string(),
+            completed: false,
+        }
+    }
+
+    fn to_workout_log_req(&self, workout_id: u32, workout_exercise_id: u32) -> WorkoutLogReq {
+        WorkoutLogReq {
+            workout_id,
+            workout_exercise_id,
+            workout_log_group_id: 0,
+            set_number: self.set_number,
+            weight: self.weight,
+            rep_number_or_seconds: self.reps_or_seconds,
+            description: if self.description.is_empty() {
+                None
+            } else {
+                Some(self.description.clone())
+            },
+        }
+    }
 }
 
 impl StartWorkoutPage {
@@ -95,25 +138,9 @@ impl StartWorkoutPage {
                         .iter()
                         .map(|e| {
                             let sets = (1..=e.sets_target)
-                                .map(|i| ActiveSet {
-                                    set_number: i,
-                                    weight: e.working_weight,
-                                    reps_or_seconds: 0,
-                                    description: "".to_string(),
-                                    completed: false,
-                                })
+                                .map(|i| ActiveSet::new(i, e.working_weight))
                                 .collect();
-
-                            ActiveExercise {
-                                workout_exercise_id: e.id,
-                                exercise_name: e.name.clone(),
-                                reps_or_seconds_target: e.reps_or_seconds_target.clone(),
-                                working_weight: e.working_weight.clone(),
-                                rest_period_seconds: e.rest_period_seconds.clone(),
-                                tempo: e.tempo.clone(),
-                                emom: e.emom.clone(),
-                                sets,
-                            }
+                            ActiveExercise::new(e.clone(), sets)
                         })
                         .collect();
 
@@ -300,29 +327,13 @@ impl StartWorkoutPage {
                 .exercises
                 .iter()
                 .flat_map(|ex| {
-                    ex.sets
-                        .iter()
-                        .filter(|s| s.completed)
-                        .map(move |s| WorkoutLogReq {
-                            workout_id: current_workout_id,
-                            workout_exercise_id: ex.workout_exercise_id,
-                            workout_log_group_id: 0,
-                            set_number: s.set_number,
-                            weight: s.weight,
-                            rep_number_or_seconds: s.reps_or_seconds,
-                            description: if s.description.is_empty() {
-                                None
-                            } else {
-                                Some(s.description.clone())
-                            },
-                        })
+                    ex.sets.iter().filter(|s| s.completed).map(move |s| {
+                        s.to_workout_log_req(current_workout_id, ex.workout_exercise_id)
+                    })
                 })
                 .collect();
 
-            let log_req = WorkoutLogGroupReq {
-                date: Local::now().date_naive(),
-                notes: session.description.clone(),
-            };
+            let log_req = WorkoutLogGroupReq::new(session.description.clone());
 
             let sender = self.sender.clone();
             let service = self.workout_log_service.clone();
