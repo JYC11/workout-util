@@ -235,7 +235,7 @@ impl WorkoutLogsPage {
                                 for log in logs {
                                     ui.label(format!("{}", log.set_number));
                                     ui.label(format!("{}", log.rep_number_or_seconds));
-                                    ui.label(format!("{} lbs", log.weight));
+                                    ui.label(format!("{} kgs", log.weight));
                                     ui.label(log.description.as_deref().unwrap_or("-"));
                                     ui.end_row();
                                 }
