@@ -5,6 +5,11 @@ use sqlx::{Pool, Sqlite, SqlitePool};
 
 pub const DEFAULT_DB_URL: &str = "sqlite://data.db";
 
+pub type SqliteTx<'a> = sqlx::Transaction<'a, Sqlite>;
+
+pub trait SqliteExecutor<'e>: sqlx::Executor<'e, Database = Sqlite> {}
+impl<'e, T: sqlx::Executor<'e, Database = Sqlite>> SqliteExecutor<'e> for T {}
+
 #[cfg(test)]
 pub const IN_MEMORY_DB_URL: &str = "sqlite::memory:";
 

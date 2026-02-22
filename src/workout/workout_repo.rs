@@ -1,13 +1,14 @@
 use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
+use crate::db::{SqliteExecutor, SqliteTx};
 use crate::workout::workout_dto::{
     WorkoutExerciseReq, WorkoutExerciseRes, WorkoutReq, WorkoutRes, WorkoutsFilterReq,
 };
 use crate::workout::workout_entity::{WorkoutEntity, WorkoutExerciseEntity};
 use chrono::Utc;
 use sqlx::types::Json;
-use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
+use sqlx::{QueryBuilder, Sqlite};
 
 #[derive(Copy, Clone)]
 pub struct WorkoutRepo {}
@@ -19,7 +20,7 @@ impl WorkoutRepo {
 
     pub async fn create_workout(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         req: WorkoutReq,
     ) -> Result<u32, String> {
         let created_at = Utc::now();
@@ -44,7 +45,7 @@ impl WorkoutRepo {
 
     pub async fn update_workout(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         id: u32,
         req: WorkoutReq,
     ) -> Result<(), String> {
@@ -70,11 +71,7 @@ impl WorkoutRepo {
         Ok(())
     }
 
-    pub async fn delete_workout(
-        &self,
-        tx: &mut Transaction<'_, Sqlite>,
-        id: u32,
-    ) -> Result<(), String> {
+    pub async fn delete_workout(&self, tx: &mut SqliteTx<'_>, id: u32) -> Result<(), String> {
         let result = sqlx::query("DELETE FROM workouts WHERE id = ?")
             .bind(id)
             .execute(&mut **tx)
@@ -88,9 +85,9 @@ impl WorkoutRepo {
         Ok(())
     }
 
-    pub async fn get_one_workout<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn get_one_workout<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         id: u32,
     ) -> Result<WorkoutRes, String> {
         let row: WorkoutEntity = sqlx::query_as("SELECT * FROM workouts WHERE id = ?")
@@ -103,9 +100,9 @@ impl WorkoutRepo {
         Ok(WorkoutRes::from_entity(row))
     }
 
-    pub async fn paginate_workouts<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn paginate_workouts<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         pagination_filters: Option<WorkoutsFilterReq>,
         pagination_params: PaginationParams,
     ) -> Result<PaginationRes<WorkoutRes>, String> {
@@ -156,7 +153,7 @@ impl WorkoutRepo {
 
     pub async fn create_workout_exercise(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         req: WorkoutExerciseReq,
     ) -> Result<u32, String> {
         let created_at = Utc::now();
@@ -192,7 +189,7 @@ impl WorkoutRepo {
 
     pub async fn update_workout_exercise(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         id: u32,
         req: WorkoutExerciseReq,
     ) -> Result<(), String> {
@@ -232,7 +229,7 @@ impl WorkoutRepo {
 
     pub async fn delete_workout_exercise(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         id: u32,
     ) -> Result<(), String> {
         let result = sqlx::query("DELETE FROM workout_exercises WHERE id = ?")
@@ -248,9 +245,9 @@ impl WorkoutRepo {
         Ok(())
     }
 
-    pub async fn get_workout_exercises_by_workout_id<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn get_workout_exercises_by_workout_id<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         workout_id: u32,
     ) -> Result<Vec<WorkoutExerciseRes>, String> {
         let rows: Vec<WorkoutExerciseEntity> =
@@ -268,9 +265,9 @@ impl WorkoutRepo {
         Ok(res)
     }
 
-    pub async fn get_one_workout_exercise<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn get_one_workout_exercise<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         id: u32,
     ) -> Result<WorkoutExerciseRes, String> {
         let entity: WorkoutExerciseEntity =

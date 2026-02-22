@@ -269,7 +269,7 @@ impl eframe::App for WorkoutUtil {
             (TextStyle::Button, FontId::proportional(18.0)),
             (TextStyle::Small, FontId::proportional(14.0)),
         ]
-            .into();
+        .into();
         style.spacing.item_spacing = egui::vec2(10.0, 8.0);
         style.spacing.button_padding = egui::vec2(8.0, 4.0);
 

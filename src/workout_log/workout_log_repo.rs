@@ -1,13 +1,14 @@
 use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
+use crate::db::{SqliteExecutor, SqliteTx};
 use crate::workout_log::workout_log_dto::{
     WorkoutLogDetailRes, WorkoutLogGroupFilterReq, WorkoutLogGroupPageRes, WorkoutLogGroupReq,
     WorkoutLogGroupRes, WorkoutLogReq,
 };
 use crate::workout_log::workout_log_entity::WorkoutLogGroupEntity;
 use chrono::Utc;
-use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
+use sqlx::{QueryBuilder, Sqlite};
 
 #[derive(Clone, Copy)]
 pub struct WorkoutLogRepo {}
@@ -19,7 +20,7 @@ impl WorkoutLogRepo {
 
     pub async fn create_log_group(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         req: WorkoutLogGroupReq,
     ) -> Result<u32, String> {
         let created_at = Utc::now();
@@ -37,11 +38,7 @@ impl WorkoutLogRepo {
         Ok(result.last_insert_rowid() as u32)
     }
 
-    pub async fn delete_log_group(
-        &self,
-        tx: &mut Transaction<'_, Sqlite>,
-        id: u32,
-    ) -> Result<(), String> {
+    pub async fn delete_log_group(&self, tx: &mut SqliteTx<'_>, id: u32) -> Result<(), String> {
         // Will fail if any workout_log references it (ON DELETE RESTRICT)
         let result = sqlx::query("DELETE FROM workout_log_groups WHERE id = ?")
             .bind(id)
@@ -56,9 +53,9 @@ impl WorkoutLogRepo {
         Ok(())
     }
 
-    pub async fn get_one_log_group<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn get_one_log_group<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         id: u32,
     ) -> Result<WorkoutLogGroupRes, String> {
         let entity: WorkoutLogGroupEntity =
@@ -73,7 +70,7 @@ impl WorkoutLogRepo {
 
     pub async fn create_log(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         req: WorkoutLogReq,
     ) -> Result<u32, String> {
         let result = sqlx::query(
@@ -97,11 +94,7 @@ impl WorkoutLogRepo {
         Ok(result.last_insert_rowid() as u32)
     }
 
-    pub async fn delete_log(
-        &self,
-        tx: &mut Transaction<'_, Sqlite>,
-        id: u32,
-    ) -> Result<(), String> {
+    pub async fn delete_log(&self, tx: &mut SqliteTx<'_>, id: u32) -> Result<(), String> {
         let result = sqlx::query("DELETE FROM workout_logs WHERE id = ?")
             .bind(id)
             .execute(&mut **tx)
@@ -115,9 +108,9 @@ impl WorkoutLogRepo {
         Ok(())
     }
 
-    pub async fn get_logs_by_workout_log_group_id<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn get_logs_by_workout_log_group_id<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         workout_log_group_id: u32,
     ) -> Result<Vec<WorkoutLogDetailRes>, String> {
         let res: Vec<WorkoutLogDetailRes> = sqlx::query_as(
@@ -147,9 +140,9 @@ impl WorkoutLogRepo {
         Ok(res)
     }
 
-    pub async fn paginate_workout_log_groups<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn paginate_workout_log_groups<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         pagination_filters: Option<WorkoutLogGroupFilterReq>,
         pagination_params: PaginationParams,
     ) -> Result<PaginationRes<WorkoutLogGroupPageRes>, String> {
@@ -195,21 +188,21 @@ impl WorkoutLogRepo {
 #[cfg(test)]
 mod tests {
     use crate::db::pagination_support::{PaginationDirection, PaginationParams};
-    use crate::db::{IN_MEMORY_DB_URL, init_db};
+    use crate::db::{IN_MEMORY_DB_URL, SqliteTx, init_db};
     use crate::enums::{Band, Equipment};
     use crate::workout_log::workout_log_dto::{
         WorkoutLogGroupFilterReq, WorkoutLogGroupReq, WorkoutLogReq,
     };
     use crate::workout_log::workout_log_repo::WorkoutLogRepo;
     use chrono::{NaiveDate, Utc};
-    use sqlx::{Sqlite, SqlitePool, Transaction};
+    use sqlx::SqlitePool;
 
     async fn setup_db() -> SqlitePool {
         init_db(IN_MEMORY_DB_URL).await
     }
 
     // Helper: Create dummy data
-    async fn create_workout_exercise(tx: &mut Transaction<'_, Sqlite>) -> (u32, u32) {
+    async fn create_workout_exercise(tx: &mut SqliteTx<'_>) -> (u32, u32) {
         // (plan_id, workout_id, exercise_id)
         let workout_id = sqlx::query(
             "INSERT INTO workouts (created_at, name, description, active) VALUES (?, ?, ?, ?)",

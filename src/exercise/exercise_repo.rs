@@ -1,6 +1,7 @@
 use crate::db::pagination_support::{
     PaginationParams, PaginationRes, get_cursors, keyset_paginate,
 };
+use crate::db::{SqliteExecutor, SqliteTx};
 use crate::enums::{
     CompoundOrIsolation, Grip, GripWidth, LeverVariation, PushOrPull, SquatOrHinge,
     StraightOrBentArm, UpperOrLower,
@@ -9,7 +10,7 @@ use crate::exercise::exercise_dto::{
     ExerciseLibraryFilterReq, ExerciseLibraryReq, ExerciseLibraryRes, ValidExercise,
 };
 use crate::exercise::exercise_entity::ExerciseLibraryEntity;
-use sqlx::{Executor, QueryBuilder, Sqlite, Transaction};
+use sqlx::{QueryBuilder, Sqlite};
 
 #[derive(Clone, Copy)]
 pub struct ExerciseRepo {}
@@ -21,7 +22,7 @@ impl ExerciseRepo {
 
     pub async fn create_exercise(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         req: ExerciseLibraryReq,
     ) -> Result<u32, String> {
         let entity = ExerciseLibraryEntity::from_req(req)?;
@@ -56,7 +57,7 @@ impl ExerciseRepo {
 
     pub async fn update_exercise(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         valid_exercise: ValidExercise,
     ) -> Result<(), String> {
         let (
@@ -172,7 +173,7 @@ impl ExerciseRepo {
 
     pub async fn delete_exercise(
         &self,
-        tx: &mut Transaction<'_, Sqlite>,
+        tx: &mut SqliteTx<'_>,
         exercise_id: u32,
     ) -> Result<(), String> {
         let result = sqlx::query("DELETE FROM exercise_library WHERE id = ?")
@@ -188,9 +189,9 @@ impl ExerciseRepo {
         Ok(())
     }
 
-    pub async fn get_one_exercise<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn get_one_exercise<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         exercise_id: u32,
     ) -> Result<ValidExercise, String> {
         let row: ExerciseLibraryEntity =
@@ -204,9 +205,9 @@ impl ExerciseRepo {
         row.to_valid_struct()
     }
 
-    pub async fn paginate_exercises<'e, E: Executor<'e, Database = Sqlite>>(
+    pub async fn paginate_exercises<'e>(
         &self,
-        executor: E,
+        executor: impl SqliteExecutor<'e>,
         filter_req: Option<ExerciseLibraryFilterReq>,
         pagination_params: PaginationParams,
     ) -> Result<PaginationRes<ExerciseLibraryRes>, String> {
