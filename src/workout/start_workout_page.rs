@@ -35,7 +35,7 @@ struct ActiveExercise {
     exercise_name: String,
     reps_or_seconds_target: u8,
     working_weight: u16,
-    rest_period_seconds: u8,
+    rest_period_seconds: u16,
     tempo: String,
     emom: bool,
     sets: Vec<ActiveSet>,

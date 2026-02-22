@@ -16,7 +16,7 @@ pub struct WorkoutExerciseEntity {
     pub sets_target: u8,
     pub reps_or_seconds_target: u8,
     pub working_weight: u16,
-    pub rest_period_seconds: u8,
+    pub rest_period_seconds: u16,
     pub tempo: String,
     pub emom: bool,
     pub equipments: Json<Vec<Equipment>>,
